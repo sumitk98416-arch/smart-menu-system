@@ -2,6 +2,60 @@
 // QRestro — Demo Data for local testing without Supabase
 // =============================================================
 
+if (typeof window !== 'undefined') {
+  const isDemo = document.cookie.includes('qrestro_demo=true');
+  if (!isDemo) {
+    const originalGet = window.localStorage.getItem;
+    const originalSet = window.localStorage.setItem;
+    const originalRemove = window.localStorage.removeItem;
+
+    window.localStorage.getItem = function (key: string) {
+      if (key === 'qrestro_demo_fresh_signup' || key === 'qrestro_real_fresh_signup') {
+        return 'true'; // Real users always start as a fresh blank setup
+      }
+      let targetKey = key;
+      if (key.startsWith('qrestro_') && !key.startsWith('qrestro_real_')) {
+        targetKey = key.startsWith('qrestro_demo_')
+          ? key.replace('qrestro_demo_', 'qrestro_real_')
+          : key.replace('qrestro_', 'qrestro_real_');
+      } else if (key.startsWith('tabletap_') && !key.startsWith('tabletap_real_')) {
+        targetKey = key.startsWith('tabletap_demo_')
+          ? key.replace('tabletap_demo_', 'tabletap_real_')
+          : key.replace('tabletap_', 'tabletap_real_');
+      }
+      return originalGet.call(window.localStorage, targetKey);
+    };
+
+    window.localStorage.setItem = function (key: string, value: string) {
+      let targetKey = key;
+      if (key.startsWith('qrestro_') && !key.startsWith('qrestro_real_')) {
+        targetKey = key.startsWith('qrestro_demo_')
+          ? key.replace('qrestro_demo_', 'qrestro_real_')
+          : key.replace('qrestro_', 'qrestro_real_');
+      } else if (key.startsWith('tabletap_') && !key.startsWith('tabletap_real_')) {
+        targetKey = key.startsWith('tabletap_demo_')
+          ? key.replace('tabletap_demo_', 'tabletap_real_')
+          : key.replace('tabletap_', 'tabletap_real_');
+      }
+      return originalSet.call(window.localStorage, targetKey, value);
+    };
+
+    window.localStorage.removeItem = function (key: string) {
+      let targetKey = key;
+      if (key.startsWith('qrestro_') && !key.startsWith('qrestro_real_')) {
+        targetKey = key.startsWith('qrestro_demo_')
+          ? key.replace('qrestro_demo_', 'qrestro_real_')
+          : key.replace('qrestro_', 'qrestro_real_');
+      } else if (key.startsWith('tabletap_') && !key.startsWith('tabletap_real_')) {
+        targetKey = key.startsWith('tabletap_demo_')
+          ? key.replace('tabletap_demo_', 'tabletap_real_')
+          : key.replace('tabletap_', 'tabletap_real_');
+      }
+      return originalRemove.call(window.localStorage, targetKey);
+    };
+  }
+}
+
 import { Restaurant, MenuCategory, MenuItem, Table, Session, Order, OrderItem, Review, MenuCategoryWithItems } from './types';
 import { getLocalDateString } from './utils';
 
@@ -149,7 +203,8 @@ export function getDemoMenuWithCategories(): MenuCategoryWithItems[] {
 
 export function getDemoOrdersWithItems(): (Order & { order_items: OrderItem[] })[] {
   if (typeof window !== 'undefined') {
-    const isFresh = localStorage.getItem('qrestro_demo_fresh_signup') === 'true';
+    const isDemo = document.cookie.includes('qrestro_demo=true');
+    const isFresh = localStorage.getItem('qrestro_demo_fresh_signup') === 'true' || !isDemo;
     if (isFresh) {
       return [];
     }
@@ -162,7 +217,8 @@ export function getDemoOrdersWithItems(): (Order & { order_items: OrderItem[] })
 
 export function loadDemoOrders(): (Order & { order_items: OrderItem[] })[] {
   if (typeof window === 'undefined') return [];
-  const isFresh = localStorage.getItem('qrestro_demo_fresh_signup') === 'true';
+  const isDemo = document.cookie.includes('qrestro_demo=true');
+  const isFresh = localStorage.getItem('qrestro_demo_fresh_signup') === 'true' || !isDemo;
   const saved = localStorage.getItem('qrestro_demo_orders');
   if (isFresh) return saved ? JSON.parse(saved) : [];
   
@@ -200,7 +256,8 @@ export function loadDemoOrders(): (Order & { order_items: OrderItem[] })[] {
 // Load custom restaurant settings from localStorage if available in browser
 if (typeof window !== 'undefined') {
   try {
-    const isFreshSignup = localStorage.getItem('qrestro_demo_fresh_signup') === 'true';
+    const isDemo = document.cookie.includes('qrestro_demo=true');
+    const isFreshSignup = localStorage.getItem('qrestro_demo_fresh_signup') === 'true' || !isDemo;
     const savedCategories = localStorage.getItem('qrestro_demo_categories');
     const savedItems = localStorage.getItem('qrestro_demo_items');
     const savedTables = localStorage.getItem('qrestro_demo_tables');
@@ -222,6 +279,9 @@ if (typeof window !== 'undefined') {
 
       if (savedTables) {
         demoTables.splice(0, demoTables.length, ...JSON.parse(savedTables));
+      } else if (!isDemo) {
+        // Real user starts with no tables
+        demoTables.splice(0, demoTables.length);
       }
 
       if (savedReviews) {
@@ -273,6 +333,15 @@ if (typeof window !== 'undefined') {
         upi_id: custom.upi_id || '',
         payment_qr_url: custom.payment_qr_url || '',
       };
+    } else if (!isDemo) {
+      // Default blank/fresh restaurant settings for real accounts
+      demoRestaurant.name = 'My Restaurant';
+      demoRestaurant.slug = 'my-restaurant';
+      demoRestaurant.description = 'Welcome to our restaurant!';
+      demoRestaurant.phone = '';
+      demoRestaurant.address = '';
+      demoRestaurant.email = '';
+      demoRestaurant.logo_url = '';
     }
   } catch (e) {
     console.error('Error loading custom demo restaurant settings:', e);

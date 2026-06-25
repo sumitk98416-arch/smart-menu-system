@@ -34,16 +34,20 @@ export async function POST(request: Request) {
     const hash = crypto.createHmac('sha256', secret).update(dataToSign).digest('hex');
     const token = `${expiry}:${hash}`;
 
+    // Always log OTP to server console for local testing/verification convenience
+    console.log('\n==================================================');
+    console.log(`[QRESTRO OTP GENERATED]`);
+    console.log(`Method: ${type.toUpperCase()}`);
+    console.log(`To:     ${cleanTarget}`);
+    console.log(`OTP:    ${otp}`);
+    console.log('==================================================\n');
+
     if (type === 'email') {
       if (!smtpPass) {
-        console.log('\n--- [SIGNUP EMAIL OTP FALLBACK] ---');
-        console.log(`To: ${cleanTarget}`);
-        console.log(`Generated OTP: ${otp}`);
-        console.log('-----------------------------------\n');
-
         return NextResponse.json({
           success: true,
           token,
+          otp,
           warning: `SMTP_PASS is not configured. Code printed to server logs: ${otp}`
         });
       }
@@ -142,15 +146,10 @@ export async function POST(request: Request) {
           );
         }
       } else {
-        // Mock Phone delivery by logging to terminal
-        console.log('\n--- [SIGNUP PHONE OTP SUBMISSION] ---');
-        console.log(`To: ${cleanTarget}`);
-        console.log(`Generated OTP: ${otp}`);
-        console.log('-------------------------------------\n');
-
         return NextResponse.json({
           success: true,
           token,
+          otp,
           warning: `SMS API is not configured. Code printed to server logs: ${otp}`
         });
       }

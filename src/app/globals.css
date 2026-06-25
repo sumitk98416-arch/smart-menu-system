@@ -386,3 +386,85 @@ html {
     display: none !important;
   }
 }
+
+/* ============================================================= */
+/* Browser Autofill Styling Overrides                            */
+/* ============================================================= */
+/* Prevents default browser autofill styling from turning the    */
+/* background white/blue and text black on dark forms.           */
+/* We use separate CSS rules for each selector to prevent browser */
+/* engines from discarding the entire rule if a prefix is unknown.*/
+/* ============================================================= */
+input.text-white:-webkit-autofill {
+  -webkit-box-shadow: 0 0 0 1000px #0f0f10 inset !important;
+  box-shadow: 0 0 0 1000px #0f0f10 inset !important;
+  -webkit-text-fill-color: #ffffff !important;
+  transition: background-color 5000s ease-in-out 0s;
+  border-radius: 0.75rem;
+}
+
+input.text-white:-webkit-autofill:hover {
+  -webkit-box-shadow: 0 0 0 1000px #0f0f10 inset !important;
+  box-shadow: 0 0 0 1000px #0f0f10 inset !important;
+  -webkit-text-fill-color: #ffffff !important;
+  transition: background-color 5000s ease-in-out 0s;
+  border-radius: 0.75rem;
+}
+
+input.text-white:-webkit-autofill:focus {
+  -webkit-box-shadow: 0 0 0 1000px #0f0f10 inset !important;
+  box-shadow: 0 0 0 1000px #0f0f10 inset !important;
+  -webkit-text-fill-color: #ffffff !important;
+  transition: background-color 5000s ease-in-out 0s;
+  border-radius: 0.75rem;
+}
+
+input.text-white:-webkit-autofill:active {
+  -webkit-box-shadow: 0 0 0 1000px #0f0f10 inset !important;
+  box-shadow: 0 0 0 1000px #0f0f10 inset !important;
+  -webkit-text-fill-color: #ffffff !important;
+  transition: background-color 5000s ease-in-out 0s;
+  border-radius: 0.75rem;
+}
+
+input.text-white:autofill {
+  -webkit-box-shadow: 0 0 0 1000px #0f0f10 inset !important;
+  box-shadow: 0 0 0 1000px #0f0f10 inset !important;
+  -webkit-text-fill-color: #ffffff !important;
+  transition: background-color 5000s ease-in-out 0s;
+  border-radius: 0.75rem;
+}
+
+input.text-white:autofill:hover {
+  -webkit-box-shadow: 0 0 0 1000px #0f0f10 inset !important;
+  box-shadow: 0 0 0 1000px #0f0f10 inset !important;
+  -webkit-text-fill-color: #ffffff !important;
+  transition: background-color 5000s ease-in-out 0s;
+  border-radius: 0.75rem;
+}
+
+input.text-white:autofill:focus {
+  -webkit-box-shadow: 0 0 0 1000px #0f0f10 inset !important;
+  box-shadow: 0 0 0 1000px #0f0f10 inset !important;
+  -webkit-text-fill-color: #ffffff !important;
+  transition: background-color 5000s ease-in-out 0s;
+  border-radius: 0.75rem;
+}
+
+input.text-white:autofill:active {
+  -webkit-box-shadow: 0 0 0 1000px #0f0f10 inset !important;
+  box-shadow: 0 0 0 1000px #0f0f10 inset !important;
+  -webkit-text-fill-color: #ffffff !important;
+  transition: background-color 5000s ease-in-out 0s;
+  border-radius: 0.75rem;
+}
+
+/* Also target dark theme selects/textareas if they have text-white */
+select.text-white:-webkit-autofill,
+select.text-white:autofill {
+  -webkit-box-shadow: 0 0 0 1000px #0f0f10 inset !important;
+  box-shadow: 0 0 0 1000px #0f0f10 inset !important;
+  -webkit-text-fill-color: #ffffff !important;
+  transition: background-color 5000s ease-in-out 0s;
+  border-radius: 0.75rem;
+}

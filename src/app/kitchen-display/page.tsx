@@ -155,7 +155,7 @@ export default function KitchenDisplayPage() {
       localStorage.removeItem('qrestro_demo_restaurant');
       localStorage.removeItem('qrestro_demo_fresh_signup');
     } catch { }
-    window.location.href = '/';
+    window.location.href = '/auth/login';
   };
 
   return (

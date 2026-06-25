@@ -5,6 +5,7 @@ import { Save, Store, Phone, MapPin, Mail, User, Crown, ChefHat, Soup, CupSoda, 
 import { demoRestaurant, saveDemoRestaurantSettings } from '@/lib/demo-data';
 import { cn } from '@/lib/utils';
 import jsQR from 'jsqr';
+import { createClient } from '@/lib/supabase/client';
 
 export default function SettingsPage() {
   const [settings, setSettings] = useState({
@@ -31,9 +32,9 @@ export default function SettingsPage() {
   const [adminName, setAdminName] = useState(() => {
     if (typeof window !== 'undefined') {
       const match = document.cookie.match(/(?:^|; )qrestro_demo_name=([^;]*)/);
-      return match ? decodeURIComponent(match[1]) : 'Sumit Kumar';
+      return match ? decodeURIComponent(match[1]) : 'Virat Kohli';
     }
-    return 'Sumit Kumar';
+    return 'Virat Kohli';
   });
 
   const [adminEmail, setAdminEmail] = useState(() => {
@@ -83,6 +84,38 @@ export default function SettingsPage() {
   const [checkoutCardCvv, setCheckoutCardCvv] = useState('');
   const [paymentStep, setPaymentStep] = useState<'idle' | 'initiating' | 'verifying' | 'authorizing' | 'activating' | 'success'>('idle');
   const [checkoutError, setCheckoutError] = useState<string | null>(null);
+
+  // Load real user details on mount if in cloud database mode
+  useEffect(() => {
+    const fetchUser = async () => {
+      const isSupabaseConfigured = 
+        process.env.NEXT_PUBLIC_SUPABASE_URL &&
+        process.env.NEXT_PUBLIC_SUPABASE_URL !== 'https://your-project.supabase.co' &&
+        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY &&
+        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY !== 'your-anon-key-here';
+
+      const isDemo = document.cookie.includes('qrestro_demo=true');
+
+      if (isSupabaseConfigured && !isDemo) {
+        try {
+          const supabase = createClient();
+          const { data: { user } } = await supabase.auth.getUser();
+          if (user) {
+            setAdminEmail(user.email || '');
+            if (user.user_metadata?.name) {
+              setAdminName(user.user_metadata.name);
+            }
+            if (user.user_metadata?.phone) {
+              setAdminPhone(user.user_metadata.phone);
+            }
+          }
+        } catch (err) {
+          console.error('Error fetching Supabase user in settings:', err);
+        }
+      }
+    };
+    fetchUser();
+  }, []);
 
   useEffect(() => {
     // Check if subscription tab is selected via URL query parameter
@@ -396,7 +429,7 @@ export default function SettingsPage() {
     reader.readAsDataURL(file);
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     // Save restaurant settings
     saveDemoRestaurantSettings(settings);
 
@@ -405,6 +438,43 @@ export default function SettingsPage() {
     document.cookie = `qrestro_demo_email=${encodeURIComponent(adminEmail)};path=/;max-age=31536000`;
     document.cookie = `qrestro_demo_phone=${encodeURIComponent(adminPhone)};path=/;max-age=31536000`;
     document.cookie = `qrestro_demo_password=${encodeURIComponent(adminPassword)};path=/;max-age=31536000`;
+
+    // Save profile details to Supabase if in real database mode
+    const isSupabaseConfigured = 
+      process.env.NEXT_PUBLIC_SUPABASE_URL &&
+      process.env.NEXT_PUBLIC_SUPABASE_URL !== 'https://your-project.supabase.co' &&
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY &&
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY !== 'your-anon-key-here';
+
+    const isDemo = document.cookie.includes('qrestro_demo=true');
+
+    if (isSupabaseConfigured && !isDemo) {
+      try {
+        const supabase = createClient();
+        const updateData: any = {
+          email: adminEmail,
+          data: {
+            name: adminName,
+            phone: adminPhone
+          }
+        };
+
+        // Only update password in Supabase if it was changed from default/preset
+        if (adminPassword && adminPassword !== 'fsilnpkgqklmmdid' && adminPassword.trim() !== '') {
+          updateData.password = adminPassword;
+        }
+
+        const { error } = await supabase.auth.updateUser(updateData);
+        if (error) {
+          alert(`Failed to update profile: ${error.message}`);
+          return;
+        }
+      } catch (err) {
+        console.error('Error updating Supabase user:', err);
+        alert('An error occurred while saving your profile to the database.');
+        return;
+      }
+    }
 
     setSaved(true);
     // Reload the page to ensure all dynamic elements across the layout update instantly
@@ -1209,7 +1279,7 @@ export default function SettingsPage() {
                           required
                           value={checkoutCardName}
                           onChange={(e) => setCheckoutCardName(e.target.value)}
-                          placeholder="e.g. Sumit Kumar"
+                          placeholder="e.g. Virat Kohli"
                           className="input-field text-sm"
                         />
                       </div>
@@ -1320,52 +1390,6 @@ export default function SettingsPage() {
               </button>
             </div>
           )}
-
-          {/* Environment info */}
-          {(() => {
-            const isSupabaseConfigured = 
-              process.env.NEXT_PUBLIC_SUPABASE_URL &&
-              process.env.NEXT_PUBLIC_SUPABASE_URL !== 'https://your-project.supabase.co' &&
-              process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY &&
-              process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY !== 'your-anon-key-here';
-
-            return (
-              <div className="card bg-cream-50 border-dashed">
-                <h3 className="text-sm font-semibold text-ink-700 mb-3">Environment</h3>
-                <div className="space-y-2 text-sm">
-                  <div className="flex items-center justify-between">
-                    <span className="text-ink-500">Mode</span>
-                    {isSupabaseConfigured ? (
-                      <span className="badge badge-sage">Cloud Database Mode</span>
-                    ) : (
-                      <span className="badge badge-gold">Demo Mode</span>
-                    )}
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-ink-500">Supabase</span>
-                    {isSupabaseConfigured ? (
-                      <span className="text-sage-600 font-semibold">Connected</span>
-                    ) : (
-                      <span className="text-ink-400">Not connected</span>
-                    )}
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-ink-500">Restaurant Slug</span>
-                    <span className="font-mono text-xs text-ink-600 bg-cream-200 px-2 py-1 rounded">{demoRestaurant.slug}</span>
-                  </div>
-                </div>
-                {isSupabaseConfigured ? (
-                  <p className="text-xs text-sage-600 mt-4">
-                    Connected to your Supabase project. Data is saved in your cloud database.
-                  </p>
-                ) : (
-                  <p className="text-xs text-ink-400 mt-4">
-                    Connect to Supabase by adding your credentials to <code className="bg-cream-200 px-1 rounded">.env.local</code> file.
-                  </p>
-                )}
-              </div>
-            );
-          })()}
         </div>
       </div>
     </div>

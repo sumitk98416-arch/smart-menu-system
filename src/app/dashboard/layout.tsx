@@ -8,6 +8,7 @@ import {
   ChefHat, Star, Settings, Menu, X, LogOut, Calendar, ChevronDown, User, Clock, Crown, CupSoda, Soup, Package, Users, BookOpen, Coins, Phone, ClipboardCheck, CreditCard, Sparkles
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { createClient } from '@/lib/supabase/client';
 
 const navItems = [
   { href: '/dashboard', label: 'Overview', icon: LayoutDashboard },
@@ -275,6 +276,31 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         } catch { }
       }
     }
+
+    // Sync real Supabase user name and email on mount if in real database mode
+    const syncRealUser = async () => {
+      const isSupabaseConfigured = 
+        process.env.NEXT_PUBLIC_SUPABASE_URL &&
+        process.env.NEXT_PUBLIC_SUPABASE_URL !== 'https://your-project.supabase.co' &&
+        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY &&
+        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY !== 'your-anon-key-here';
+
+      const isDemo = document.cookie.includes('qrestro_demo=true');
+
+      if (isSupabaseConfigured && !isDemo) {
+        try {
+          const supabase = createClient();
+          const { data: { user } } = await supabase.auth.getUser();
+          if (user) {
+            setUserName(user.user_metadata?.name || user.email?.split('@')[0] || 'Owner');
+            setUserEmail(user.email || '');
+          }
+        } catch (e) {
+          console.error('Error fetching Supabase user in layout:', e);
+        }
+      }
+    };
+    syncRealUser();
 
     // Real-time custom event listeners for logo and name syncing
     const handleLogoChange = (e: Event) => {
@@ -560,7 +586,13 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           )}
 
           <button
-            onClick={() => {
+            onClick={async () => {
+              try {
+                const supabase = createClient();
+                await supabase.auth.signOut();
+              } catch (e) {
+                console.error('Error signing out of Supabase:', e);
+              }
               document.cookie = 'qrestro_demo=;path=/;max-age=0';
               document.cookie = 'qrestro_demo_name=;path=/;max-age=0';
               document.cookie = 'qrestro_demo_email=;path=/;max-age=0';
@@ -569,7 +601,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 localStorage.removeItem('qrestro_demo_restaurant');
                 localStorage.removeItem('qrestro_demo_fresh_signup');
               } catch { }
-              window.location.href = '/';
+              window.location.href = '/auth/login';
             }}
             className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-ink-500 hover:bg-cream-50 hover:text-ink-900 transition-all w-full cursor-pointer"
           >
@@ -626,11 +658,11 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 {/* Top Section */}
                 <div className="flex items-center gap-3">
                   <div className="w-12 h-12 rounded-full bg-[#FAF4EB] border border-[#B88A52]/10 flex items-center justify-center flex-shrink-0 text-xl font-bold text-[#B88A52] font-heading">
-                    {userName === 'Owner' ? 'S' : userName.charAt(0).toUpperCase()}
+                    {userName === 'Owner' ? 'V' : userName.charAt(0).toUpperCase()}
                   </div>
                   <div className="text-left">
                     <h4 className="font-heading font-bold text-ink-900 text-base leading-tight">
-                      {userName === 'Owner' ? 'Sumit Kumar' : userName}
+                      {userName === 'Owner' ? 'Virat Kohli' : userName}
                     </h4>
                   </div>
                 </div>

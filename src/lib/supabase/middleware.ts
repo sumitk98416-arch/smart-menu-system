@@ -8,11 +8,7 @@ export async function updateSession(request: NextRequest) {
   const isDemoMode = request.cookies.get('qrestro_demo')?.value === 'true';
 
   if (isDemoMode) {
-    if (request.nextUrl.pathname.startsWith('/auth')) {
-      const url = request.nextUrl.clone();
-      url.pathname = '/dashboard';
-      return NextResponse.redirect(url);
-    }
+    // Allow users to access auth pages even in demo mode (e.g., to sign in with a different account)
     return supabaseResponse;
   }
 
@@ -59,12 +55,6 @@ export async function updateSession(request: NextRequest) {
     return NextResponse.redirect(url);
   }
 
-  // Redirect authenticated users away from auth pages
-  if (user && request.nextUrl.pathname.startsWith('/auth')) {
-    const url = request.nextUrl.clone();
-    url.pathname = '/dashboard';
-    return NextResponse.redirect(url);
-  }
-
+  // Allow authenticated users to view auth pages (e.g., to switch accounts or sign out)
   return supabaseResponse;
 }
