@@ -4,25 +4,26 @@ import { NextResponse, type NextRequest } from 'next/server';
 export async function updateSession(request: NextRequest) {
   let supabaseResponse = NextResponse.next({ request });
 
-  // Skip auth check if Supabase is not configured (demo mode)
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  if (!supabaseUrl || supabaseUrl === 'https://your-project.supabase.co') {
-    // Demo mode: allow all routes
-    // Check for demo session cookie
-    const isDemoMode = request.cookies.get('tabletap_demo')?.value === 'true';
+  // Check for demo session cookie
+  const isDemoMode = request.cookies.get('qrestro_demo')?.value === 'true';
 
-    if (!isDemoMode && request.nextUrl.pathname.startsWith('/dashboard')) {
-      const url = request.nextUrl.clone();
-      url.pathname = '/auth/login';
-      return NextResponse.redirect(url);
-    }
-
-    if (isDemoMode && request.nextUrl.pathname.startsWith('/auth')) {
+  if (isDemoMode) {
+    if (request.nextUrl.pathname.startsWith('/auth')) {
       const url = request.nextUrl.clone();
       url.pathname = '/dashboard';
       return NextResponse.redirect(url);
     }
+    return supabaseResponse;
+  }
 
+  // Skip auth check if Supabase is not configured (demo mode)
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  if (!supabaseUrl || supabaseUrl === 'https://your-project.supabase.co') {
+    if (request.nextUrl.pathname.startsWith('/dashboard')) {
+      const url = request.nextUrl.clone();
+      url.pathname = '/auth/login';
+      return NextResponse.redirect(url);
+    }
     return supabaseResponse;
   }
 

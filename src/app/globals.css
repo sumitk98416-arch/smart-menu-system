@@ -2,7 +2,7 @@
 @import "tailwindcss";
 
 /* ============================================================= */
-/* TableTap Design System — Premium Warm Restaurant Aesthetic    */
+/* QRestro Design System — Premium Warm Restaurant Aesthetic    */
 /* ============================================================= */
 
 @theme inline {
@@ -58,18 +58,24 @@ h1, h2, h3, h4, h5, h6 {
 /* ============================================================= */
 /* Scrollbar Styling                                             */
 /* ============================================================= */
+html {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(184, 138, 82, 0.25) transparent;
+}
+
 ::-webkit-scrollbar {
   width: 6px;
+  height: 6px;
 }
 ::-webkit-scrollbar-track {
-  background: #f2ebe0;
+  background: transparent;
 }
 ::-webkit-scrollbar-thumb {
-  background: #d4c4ae;
-  border-radius: 3px;
+  background: rgba(184, 138, 82, 0.25);
+  border-radius: 9999px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #c4b094;
+  background: rgba(184, 138, 82, 0.5);
 }
 
 /* ============================================================= */
@@ -108,6 +114,15 @@ h1, h2, h3, h4, h5, h6 {
 @keyframes shimmer {
   0% { background-position: -200% 0; }
   100% { background-position: 200% 0; }
+}
+
+@keyframes simpleFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.animate-simple-fade {
+  animation: simpleFadeIn 0.3s ease-out forwards;
 }
 
 .animate-fade-in {
@@ -256,15 +271,15 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 .input-field.pl-11 {
-  padding-left: 2.75rem;
+  padding-left: 2.75rem !important;
 }
 
 .input-field.pl-10 {
-  padding-left: 2.5rem;
+  padding-left: 2.5rem !important;
 }
 
 .input-field.pr-11 {
-  padding-right: 2.75rem;
+  padding-right: 2.75rem !important;
 }
 
 .input-field::placeholder {
@@ -308,9 +323,16 @@ h1, h2, h3, h4, h5, h6 {
 .overlay {
   position: fixed;
   inset: 0;
-  background: rgba(26, 18, 8, 0.3);
-  backdrop-filter: blur(4px);
+  background: rgba(26, 18, 8, 0.28);
+  backdrop-filter: blur(32px);
+  -webkit-backdrop-filter: blur(32px);
   z-index: 40;
+}
+
+/* Suppress browser-default focus outlines on scrollable containers */
+.overflow-y-auto:focus, 
+[class*="overflow-y-auto"]:focus {
+  outline: none !important;
 }
 
 /* ============================================================= */
@@ -322,3 +344,45 @@ h1, h2, h3, h4, h5, h6 {
 .status-ready { background: #bbf7d0; color: #166534; }
 .status-served { background: #d1fae5; color: #065f46; }
 .status-cancelled { background: #fecaca; color: #991b1b; }
+
+/* ============================================================= */
+/* Print Styles for Guest Receipts                              */
+/* ============================================================= */
+@media print {
+  body {
+    background: white !important;
+    color: black !important;
+  }
+  
+  /* Hide every single element on the web application during print */
+  body * {
+    visibility: hidden !important;
+  }
+  
+  /* Show only the guest receipt card and its children */
+  .printable-receipt,
+  .printable-receipt * {
+    visibility: visible !important;
+  }
+  
+  /* Pin the receipt card to the top left and fill the width */
+  .printable-receipt {
+    position: absolute !important;
+    left: 0 !important;
+    top: 0 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    border: none !important;
+    box-shadow: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    background: white !important;
+  }
+  
+  /* Hide the action buttons inside the receipt panel during print */
+  .no-print,
+  .no-print * {
+    visibility: hidden !important;
+    display: none !important;
+  }
+}

@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { Star, Send, UtensilsCrossed, ArrowLeft, Phone, User, CheckCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { demoRestaurant } from '@/lib/demo-data';
+import { demoRestaurant, demoReviews } from '@/lib/demo-data';
 
 export default function ReviewPage() {
   const params = useParams();
@@ -19,7 +19,34 @@ export default function ReviewPage() {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (rating === 0) return;
-    // In production, this would POST to /api/reviews
+
+    // Save to localStorage
+    if (typeof window !== 'undefined') {
+      const stored = localStorage.getItem('qrestro_reviews');
+      let reviewsList = [];
+      if (stored) {
+        try {
+          reviewsList = JSON.parse(stored);
+        } catch {}
+      } else {
+        reviewsList = [...demoReviews];
+      }
+
+      const newReview = {
+        id: `rev-new-${Date.now()}`,
+        session_id: null,
+        restaurant_id: demoRestaurant.id,
+        rating: rating,
+        comment: comment.trim(),
+        customer_name: customerName.trim() || 'Anonymous Diner',
+        customer_phone: customerPhone.trim() || undefined,
+        created_at: new Date().toISOString()
+      };
+
+      const updatedReviews = [newReview, ...reviewsList];
+      localStorage.setItem('qrestro_reviews', JSON.stringify(updatedReviews));
+    }
+
     setSubmitted(true);
   };
 

@@ -1,20 +1,38 @@
 'use client';
 
+import { useState, useEffect } from 'react';
 import { Star, Phone, Calendar, MessageSquare } from 'lucide-react';
 import { demoReviews } from '@/lib/demo-data';
 import { formatDate } from '@/lib/utils';
 
 export default function ReviewsPage() {
-  const reviews = demoReviews;
-  const avgRating = reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length;
+  const [reviews, setReviews] = useState<any[]>([]);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const stored = localStorage.getItem('qrestro_reviews');
+      if (stored) {
+        try {
+          setReviews(JSON.parse(stored));
+        } catch {
+          setReviews(demoReviews);
+        }
+      } else {
+        setReviews(demoReviews);
+        localStorage.setItem('qrestro_reviews', JSON.stringify(demoReviews));
+      }
+    }
+  }, []);
+
+  const avgRating = reviews.length > 0 ? reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length : 0;
   const ratingDistribution = [5, 4, 3, 2, 1].map(rating => ({
     rating,
     count: reviews.filter(r => r.rating === rating).length,
-    percent: (reviews.filter(r => r.rating === rating).length / reviews.length) * 100,
+    percent: reviews.length > 0 ? (reviews.filter(r => r.rating === rating).length / reviews.length) * 100 : 0,
   }));
 
   return (
-    <div className="space-y-6 animate-fade-in">
+    <div className="space-y-6 animate-simple-fade">
       <div>
         <h1 className="font-heading text-3xl font-bold text-ink-900">Customer Reviews</h1>
         <p className="text-ink-500 mt-1">Feedback from your diners</p>

@@ -1,8 +1,8 @@
 // =============================================================
-// TableTap — App Constants
+// QRestro — App Constants
 // =============================================================
 
-export const APP_NAME = 'TableTap';
+export const APP_NAME = 'QRestro';
 export const APP_DESCRIPTION = 'Premium QR-based restaurant ordering platform';
 export const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
 

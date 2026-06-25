@@ -1,5 +1,5 @@
 // =============================================================
-// TableTap — Utility Functions
+// QRestro — Utility Functions
 // =============================================================
 
 export function cn(...classes: (string | boolean | undefined | null)[]) {
@@ -58,3 +58,11 @@ export function timeAgo(dateString: string): string {
   const diffDays = Math.floor(diffHours / 24);
   return `${diffDays}d ago`;
 }
+
+export function getLocalDateString(d = new Date()): string {
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+

@@ -1,5 +1,5 @@
 // =============================================================
-// TableTap — TypeScript Type Definitions
+// QRestro — TypeScript Type Definitions
 // =============================================================
 
 export interface Restaurant {
@@ -12,6 +12,7 @@ export interface Restaurant {
   phone: string;
   address: string;
   currency: string;
+  email?: string;
   settings: Record<string, unknown>;
   is_active: boolean;
   created_at: string;
@@ -60,6 +61,7 @@ export interface Table {
   table_number: string;
   capacity: number;
   is_active: boolean;
+  is_vip?: boolean;
   created_at: string;
 }
 
@@ -86,6 +88,7 @@ export interface Order {
   updated_at: string;
   order_items?: OrderItem[];
   session?: Session;
+  payment_status?: 'unpaid' | 'pending' | 'paid';
 }
 
 export type OrderStatus = 'new' | 'accepted' | 'preparing' | 'ready' | 'served' | 'cancelled';
