@@ -248,7 +248,7 @@ export default function SettingsPage() {
 
       // 3. Open the Razorpay Overlay
       const options = {
-        key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || 'rzp_test_dummy',
+        key: orderJson.keyId || process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || 'rzp_test_dummy',
         amount: orderJson.amount,
         currency: orderJson.currency,
         name: 'TableTap Premium Plan',

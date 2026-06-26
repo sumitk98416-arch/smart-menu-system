@@ -26,6 +26,7 @@ export async function POST(request: NextRequest) {
         orderId: mockOrderId,
         amount: Math.round(amount * 100),
         currency: 'INR',
+        keyId: 'rzp_test_dummy',
         isMock: true
       });
     }
@@ -49,6 +50,7 @@ export async function POST(request: NextRequest) {
       orderId: order.id,
       amount: order.amount,
       currency: order.currency,
+      keyId: keyId,
       isMock: false
     });
   } catch (error: any) {
