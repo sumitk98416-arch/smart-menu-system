@@ -163,19 +163,36 @@ export default function OrderStatusPage() {
   useEffect(() => {
     if (typeof window !== 'undefined') {
       try {
+        let custom: any = null;
         const saved = localStorage.getItem('qrestro_demo_restaurant');
         if (saved) {
-          const custom = JSON.parse(saved);
+          custom = JSON.parse(saved);
+        } else {
+          const sessionSaved = sessionStorage.getItem('qrestro_last_restaurant');
+          if (sessionSaved) {
+            custom = JSON.parse(sessionSaved);
+          }
+        }
+
+        if (custom) {
           setTimeout(() => {
             if (custom.logo_url) setRestaurantLogo(custom.logo_url);
             if (custom.name) setRestaurantName(custom.name);
             if (custom.currency) setCurrencySymbol(custom.currency);
-            if (custom.upi_id) setUpiId(custom.upi_id);
-            if (custom.payment_qr_url) setPaymentQrUrl(custom.payment_qr_url);
-            if (custom.cgst_rate !== undefined) setCgstRate(Number(custom.cgst_rate));
-            if (custom.sgst_rate !== undefined) setSgstRate(Number(custom.sgst_rate));
-            if (custom.service_charge_rate !== undefined) setServiceChargeRate(Number(custom.service_charge_rate));
-            if (custom.service_charge_type) setServiceChargeType(custom.service_charge_type);
+            
+            const upi = custom.upi_id || custom.settings?.upi_id || '';
+            const payQr = custom.payment_qr_url || custom.settings?.payment_qr_url || '';
+            const cgst = custom.cgst_rate !== undefined ? Number(custom.cgst_rate) : (custom.settings?.cgst_rate !== undefined ? Number(custom.settings.cgst_rate) : 2.5);
+            const sgst = custom.sgst_rate !== undefined ? Number(custom.sgst_rate) : (custom.settings?.sgst_rate !== undefined ? Number(custom.settings.sgst_rate) : 2.5);
+            const svcRate = custom.service_charge_rate !== undefined ? Number(custom.service_charge_rate) : (custom.settings?.service_charge_rate !== undefined ? Number(custom.settings.service_charge_rate) : 0);
+            const svcType = custom.service_charge_type || custom.settings?.service_charge_type || 'percent';
+
+            setUpiId(upi);
+            setPaymentQrUrl(payQr);
+            setCgstRate(cgst);
+            setSgstRate(sgst);
+            setServiceChargeRate(svcRate);
+            setServiceChargeType(svcType);
           }, 0);
         }
       } catch {}

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { Star, Send, UtensilsCrossed, ArrowLeft, Phone, User, CheckCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -15,6 +15,27 @@ export default function ReviewPage() {
   const [customerName, setCustomerName] = useState('');
   const [customerPhone, setCustomerPhone] = useState('');
   const [submitted, setSubmitted] = useState(false);
+  const [restaurantName, setRestaurantName] = useState('The Golden Plate');
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        let custom: any = null;
+        const saved = localStorage.getItem('qrestro_demo_restaurant');
+        if (saved) {
+          custom = JSON.parse(saved);
+        } else {
+          const sessionSaved = sessionStorage.getItem('qrestro_last_restaurant');
+          if (sessionSaved) {
+            custom = JSON.parse(sessionSaved);
+          }
+        }
+        if (custom && custom.name) {
+          setRestaurantName(custom.name);
+        }
+      } catch {}
+    }
+  }, []);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -59,7 +80,7 @@ export default function ReviewPage() {
           </div>
           <h2 className="font-heading text-2xl font-bold text-ink-900 mb-2">Thank You!</h2>
           <p className="text-ink-500 mb-8">
-            Your feedback helps us serve you better. We appreciate your visit to {demoRestaurant.name}!
+            Your feedback helps us serve you better. We appreciate your visit to {restaurantName}!
           </p>
           <div className="flex items-center justify-center gap-1 mb-8">
             {[1, 2, 3, 4, 5].map(star => (
@@ -90,7 +111,7 @@ export default function ReviewPage() {
           </button>
           <div>
             <h1 className="font-heading text-lg font-bold text-ink-900">Leave a Review</h1>
-            <p className="text-xs text-ink-400">{demoRestaurant.name}</p>
+            <p className="text-xs text-ink-400">{restaurantName}</p>
           </div>
         </div>
       </header>

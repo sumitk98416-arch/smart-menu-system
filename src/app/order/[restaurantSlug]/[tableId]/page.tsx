@@ -23,13 +23,6 @@ export default function CustomerMenuPage() {
   useEffect(() => {
     if (typeof window !== 'undefined') {
       try {
-        const saved = localStorage.getItem('qrestro_demo_restaurant');
-        if (saved) {
-          const custom = JSON.parse(saved);
-          if (custom.logo_url) setRestaurantLogo(custom.logo_url);
-          if (custom.name) setRestaurantName(custom.name);
-        }
-
         const registered = localStorage.getItem('qrestro_registered_restaurants');
         if (registered) {
           const list = JSON.parse(registered);
@@ -40,9 +33,37 @@ export default function CustomerMenuPage() {
         }
       } catch {}
 
-      // Load menu after hydration so localStorage custom categories/items are respected
-      setCategories(getDemoMenuWithCategories());
-      setIsLoaded(true);
+      // Load menu from the cloud API
+      fetch(`/api/menu/public?slug=${params.restaurantSlug}`)
+        .then((res) => {
+          if (!res.ok) throw new Error('Not found in database');
+          return res.json();
+        })
+        .then((data) => {
+          if (data.restaurant) {
+            if (data.restaurant.logo_url) setRestaurantLogo(data.restaurant.logo_url);
+            if (data.restaurant.name) setRestaurantName(data.restaurant.name);
+            sessionStorage.setItem('qrestro_last_restaurant', JSON.stringify(data.restaurant));
+          }
+          if (data.categories) {
+            setCategories(data.categories);
+          }
+          setIsLoaded(true);
+        })
+        .catch((err) => {
+          console.warn('Could not load custom menu from database, falling back to local demo:', err);
+          // Fallback to local demo storage
+          try {
+            const saved = localStorage.getItem('qrestro_demo_restaurant');
+            if (saved) {
+              const custom = JSON.parse(saved);
+              if (custom.logo_url) setRestaurantLogo(custom.logo_url);
+              if (custom.name) setRestaurantName(custom.name);
+            }
+          } catch {}
+          setCategories(getDemoMenuWithCategories());
+          setIsLoaded(true);
+        });
     }
   }, [params.restaurantSlug]);
 
