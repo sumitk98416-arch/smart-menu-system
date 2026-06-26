@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Save, Store, Phone, MapPin, Mail, User, Crown, ChefHat, Soup, CupSoda, Star, Image as ImageIcon, Upload, X, Percent, Lock, Key, QrCode, CreditCard, Sparkles, ShieldCheck, Check } from 'lucide-react';
+import { Save, Store, Phone, MapPin, Mail, User, Crown, ChefHat, Soup, CupSoda, Star, Image as ImageIcon, Upload, X, Percent, Lock, QrCode, CreditCard, Sparkles, ShieldCheck, Check, Eye, EyeOff } from 'lucide-react';
 import { demoRestaurant, saveDemoRestaurantSettings } from '@/lib/demo-data';
 import { cn } from '@/lib/utils';
 import jsQR from 'jsqr';
@@ -64,6 +64,29 @@ export default function SettingsPage() {
   const [activeTab, setActiveTab] = useState<'profile' | 'billing' | 'security' | 'subscription'>('profile');
   const [saved, setSaved] = useState(false);
 
+  // Kitchen password change state
+  const [kitchenNewPass, setKitchenNewPass]         = useState('');
+  const [kitchenConfirmPass, setKitchenConfirmPass] = useState('');
+  const [showKitchenNew, setShowKitchenNew]         = useState(false);
+  const [showKitchenConfirm, setShowKitchenConfirm] = useState(false);
+  const [kitchenPassMsg, setKitchenPassMsg]         = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+
+  const handleSetKitchenPassword = () => {
+    if (!kitchenNewPass || kitchenNewPass.length < 4) {
+      setKitchenPassMsg({ type: 'error', text: 'Password must be at least 4 characters.' });
+      return;
+    }
+    if (kitchenNewPass !== kitchenConfirmPass) {
+      setKitchenPassMsg({ type: 'error', text: 'Passwords do not match.' });
+      return;
+    }
+    setSettings(prev => ({ ...prev, chef_password: kitchenNewPass }));
+    setKitchenNewPass('');
+    setKitchenConfirmPass('');
+    setKitchenPassMsg({ type: 'success', text: 'Password updated! Click Save Settings to apply.' });
+    setTimeout(() => setKitchenPassMsg(null), 4000);
+  };
+
   // Subscription licensing states
   const [subscription, setSubscription] = useState<{
     plan: 'trial' | 'premium';
@@ -78,10 +101,7 @@ export default function SettingsPage() {
   });
 
   const [isUpgradeModalOpen, setIsUpgradeModalOpen] = useState(false);
-  const [checkoutCardName, setCheckoutCardName] = useState('');
-  const [checkoutCardNumber, setCheckoutCardNumber] = useState('');
-  const [checkoutCardExpiry, setCheckoutCardExpiry] = useState('');
-  const [checkoutCardCvv, setCheckoutCardCvv] = useState('');
+  const [razorpayLoading, setRazorpayLoading] = useState(false);
   const [paymentStep, setPaymentStep] = useState<'idle' | 'initiating' | 'verifying' | 'authorizing' | 'activating' | 'success'>('idle');
   const [checkoutError, setCheckoutError] = useState<string | null>(null);
 
@@ -181,92 +201,133 @@ export default function SettingsPage() {
     };
   }, []);
 
-  const handleCardNumberChange = (val: string) => {
-    const cleaned = val.replace(/\D/g, '').slice(0, 16);
-    const parts = [];
-    for (let i = 0; i < cleaned.length; i += 4) {
-      parts.push(cleaned.slice(i, i + 4));
-    }
-    setCheckoutCardNumber(parts.join(' '));
+  const loadRazorpayScript = () => {
+    return new Promise((resolve) => {
+      if ((window as any).Razorpay) {
+        resolve(true);
+        return;
+      }
+      const script = document.createElement('script');
+      script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+      script.onload = () => resolve(true);
+      script.onerror = () => resolve(false);
+      document.body.appendChild(script);
+    });
   };
 
-  const handleExpiryChange = (val: string) => {
-    const cleaned = val.replace(/\D/g, '').slice(0, 4);
-    if (cleaned.length >= 3) {
-      setCheckoutCardExpiry(`${cleaned.slice(0, 2)}/${cleaned.slice(2)}`);
-    } else {
-      setCheckoutCardExpiry(cleaned);
-    }
-  };
+  const handleRazorpaySubscription = async () => {
+    try {
+      setRazorpayLoading(true);
+      setCheckoutError(null);
+      setPaymentStep('initiating');
 
-  const handleCvvChange = (val: string) => {
-    setCheckoutCardCvv(val.replace(/\D/g, '').slice(0, 3));
-  };
+      // Amount is ₹199 plan + ₹5 platform fee = ₹204 total
+      const totalAmount = 204;
 
-  const handlePaymentSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    setCheckoutError(null);
-    
-    if (!checkoutCardName.trim()) {
-      setCheckoutError("Cardholder name is required.");
-      return;
-    }
-    if (checkoutCardNumber.replace(/\s/g, '').length !== 16) {
-      setCheckoutError("Please enter a valid 16-digit card number.");
-      return;
-    }
-    const expiryPattern = /^(0[1-9]|1[0-2])\/?([0-9]{2})$/;
-    if (!expiryPattern.test(checkoutCardExpiry)) {
-      setCheckoutError("Please enter expiry date in MM/YY format.");
-      return;
-    }
-    if (checkoutCardCvv.length !== 3) {
-      setCheckoutError("CVV must be 3 digits.");
-      return;
-    }
+      // 1. Create order on the backend (api/payment/order)
+      const orderResponse = await fetch('/api/payment/order', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ amount: totalAmount, orderNumber: 9999 }),
+      });
 
-    setPaymentStep('initiating');
-    
-    setTimeout(() => {
-      setPaymentStep('verifying');
-    }, 500);
+      if (!orderResponse.ok) {
+        throw new Error('Failed to initiate secure checkout session');
+      }
 
-    setTimeout(() => {
-      setPaymentStep('authorizing');
-    }, 1000);
+      const orderJson = await orderResponse.json();
 
-    setTimeout(() => {
-      setPaymentStep('activating');
-    }, 1500);
+      // 2. Load the external Razorpay Checkout SDK
+      const isLoaded = await loadRazorpayScript();
+      if (!isLoaded) {
+        setCheckoutError('Razorpay Checkout SDK failed to load. Please verify your internet connection.');
+        setPaymentStep('idle');
+        setRazorpayLoading(false);
+        return;
+      }
 
-    setTimeout(() => {
-      setPaymentStep('success');
-      const getLocalDateString = (d = new Date()) => {
-        const year = d.getFullYear();
-        const month = String(d.getMonth() + 1).padStart(2, '0');
-        const day = String(d.getDate()).padStart(2, '0');
-        return `${year}-${month}-${day}`;
+      // 3. Open the Razorpay Overlay
+      const options = {
+        key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || 'rzp_test_dummy',
+        amount: orderJson.amount,
+        currency: orderJson.currency,
+        name: 'TableTap Premium Plan',
+        description: 'Monthly Premium Plan + Platform Fee',
+        order_id: orderJson.orderId,
+        handler: async function (response: any) {
+          try {
+            setPaymentStep('verifying');
+            // Verify payment signature on the backend (api/payment/verify)
+            const verifyResponse = await fetch('/api/payment/verify', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                razorpay_order_id: response.razorpay_order_id,
+                razorpay_payment_id: response.razorpay_payment_id,
+                razorpay_signature: response.razorpay_signature,
+              }),
+            });
+
+            const verifyJson = await verifyResponse.json();
+            if (verifyJson.verified) {
+              setPaymentStep('success');
+              
+              const getLocalDateString = (d = new Date()) => {
+                const year = d.getFullYear();
+                const month = String(d.getMonth() + 1).padStart(2, '0');
+                const day = String(d.getDate()).padStart(2, '0');
+                return `${year}-${month}-${day}`;
+              };
+
+              const todayStr = getLocalDateString();
+              const updated = {
+                plan: 'premium',
+                trialStartDate: subscription.trialStartDate || todayStr,
+                subscribedDate: todayStr,
+              };
+              localStorage.setItem('qrestro_demo_subscription', JSON.stringify(updated));
+              
+              window.dispatchEvent(new CustomEvent('qrestro_subscription_changed'));
+
+              setTimeout(() => {
+                setIsUpgradeModalOpen(false);
+                setPaymentStep('idle');
+              }, 2500);
+            } else {
+              setCheckoutError(`Payment verification signature mismatch: ${verifyJson.error}`);
+              setPaymentStep('idle');
+            }
+          } catch (err: any) {
+            console.error(err);
+            setCheckoutError(`Payment verification connection failed: ${err.message}`);
+            setPaymentStep('idle');
+          } finally {
+            setRazorpayLoading(false);
+          }
+        },
+        prefill: {
+          name: adminName,
+          email: adminEmail,
+        },
+        theme: {
+          color: '#B88A52',
+        },
+        modal: {
+          ondismiss: function () {
+            setPaymentStep('idle');
+            setRazorpayLoading(false);
+          }
+        }
       };
 
-      const todayStr = getLocalDateString();
-      const updated = {
-        plan: 'premium',
-        trialStartDate: subscription.trialStartDate || todayStr,
-        subscribedDate: todayStr,
-      };
-      localStorage.setItem('qrestro_demo_subscription', JSON.stringify(updated));
-      
-      window.dispatchEvent(new CustomEvent('qrestro_subscription_changed'));
-    }, 2000);
-
-    setTimeout(() => {
-      setIsUpgradeModalOpen(false);
+      const rzp = new (window as any).Razorpay(options);
+      rzp.open();
+    } catch (err: any) {
+      console.error(err);
+      setCheckoutError(err.message || 'Payment initiation failed');
       setPaymentStep('idle');
-      setCheckoutCardName('');
-      setCheckoutCardNumber('');
-      setCheckoutCardExpiry('');
-      setCheckoutCardCvv('');
-    }, 3500);
+      setRazorpayLoading(false);
+    }
   };
 
   const handleCancelSubscription = () => {
@@ -986,113 +1047,125 @@ export default function SettingsPage() {
                 </div>
               </div>
 
-              {/* Login Credentials Card */}
-              <div className="card space-y-6 animate-scale-in">
-                <h2 className="font-heading text-xl font-semibold text-ink-900 flex items-center gap-2">
-                  <Key className="w-5 h-5 text-gold-500" /> Login Credentials
-                </h2>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-ink-700 mb-1">Login Email / ID</label>
-                    <input
-                      type="email"
-                      value={adminEmail}
-                      onChange={(e) => {
-                        const val = e.target.value;
-                        setAdminEmail(val);
-                        if (settings.chef_use_admin_creds) {
-                          setSettings(prev => ({ ...prev, chef_email: val }));
-                        }
-                      }}
-                      className="input-field"
-                      placeholder="admin@qrestro.com"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-ink-700 mb-1">Login Password</label>
-                    <input
-                      type="text"
-                      value={adminPassword}
-                      onChange={(e) => {
-                        const val = e.target.value;
-                        setAdminPassword(val);
-                        if (settings.chef_use_admin_creds) {
-                          setSettings(prev => ({ ...prev, chef_password: val }));
-                        }
-                      }}
-                      className="input-field font-mono"
-                      placeholder="adminpassword"
-                    />
-                  </div>
-                </div>
-              </div>
-
               {/* Kitchen Screen Access Settings */}
-              <div className="card space-y-6 animate-scale-in">
-                <h2 className="font-heading text-xl font-semibold text-ink-900 flex items-center gap-2">
-                  <ChefHat className="w-5 h-5 text-gold-500" /> Kitchen Screen Credentials
-                </h2>
-
-                <div className="flex items-center gap-3 p-3 bg-cream-100/40 border border-cream-200/50 rounded-xl">
-                  <input
-                    type="checkbox"
-                    id="chef_use_admin_creds"
-                    checked={settings.chef_use_admin_creds}
-                    onChange={(e) => {
-                      const checked = e.target.checked;
-                      setSettings({
-                        ...settings,
-                        chef_use_admin_creds: checked,
-                        chef_email: checked ? adminEmail : settings.chef_email,
-                        chef_password: checked ? adminPassword : settings.chef_password
-                      });
-                    }}
-                    className="w-4 h-4 rounded text-gold-600 focus:ring-gold-500 border-cream-300 cursor-pointer"
-                  />
-                  <label htmlFor="chef_use_admin_creds" className="text-sm font-medium text-ink-700 cursor-pointer select-none">
-                    Use the same email ID & password as your restaurant dashboard
-                  </label>
+              <div className="card space-y-5 animate-scale-in">
+                <div>
+                  <h2 className="font-heading text-xl font-semibold text-ink-900 flex items-center gap-2">
+                    <ChefHat className="w-5 h-5 text-gold-500" /> Kitchen Screen Credentials
+                  </h2>
+                  <p className="text-sm text-ink-450 mt-1">
+                    These credentials are used to access the Kitchen Display from the sign-in page.
+                    Share them with your kitchen staff only.
+                  </p>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* Kitchen Email */}
+                <div>
+                  <label className="block text-sm font-medium text-ink-700 mb-1">Kitchen Email / ID</label>
+                  <input
+                    type="email"
+                    value={settings.chef_email}
+                    onChange={(e) => setSettings({ ...settings, chef_email: e.target.value })}
+                    className="input-field"
+                    placeholder="kitchen@yourrestaurant.com"
+                  />
+                </div>
+
+                {/* Kitchen Password Section */}
+                <div className="space-y-3 pt-2 border-t border-cream-200/60">
                   <div>
-                    <label className="block text-sm font-medium text-ink-700 mb-1">Kitchen login Email / ID</label>
-                    <input
-                      type="email"
-                      value={settings.chef_use_admin_creds ? adminEmail : settings.chef_email}
-                      onChange={(e) => !settings.chef_use_admin_creds && setSettings({ ...settings, chef_email: e.target.value })}
-                      className="input-field disabled:opacity-60 disabled:cursor-not-allowed"
-                      placeholder="chef@qrestro.com"
-                      disabled={settings.chef_use_admin_creds}
-                    />
+                    <p className="text-sm font-semibold text-ink-800 mb-0.5">Set Kitchen Password</p>
+                    <p className="text-xs text-ink-450">Current password: <span className="font-mono font-bold text-ink-700">{settings.chef_password}</span></p>
                   </div>
-                  <div>
-                    <div className="flex items-center justify-between mb-1">
-                      <label className="block text-sm font-medium text-ink-700">Kitchen password</label>
-                      {!settings.chef_use_admin_creds && (
+
+                  {/* Feedback message */}
+                  {kitchenPassMsg && (
+                    <div className={`p-3 rounded-xl text-sm flex items-center gap-2 ${
+                      kitchenPassMsg.type === 'success'
+                        ? 'bg-sage-400/10 border border-sage-400/20 text-sage-700'
+                        : 'bg-rose-50 border border-rose-200 text-rose-600'
+                    }`}>
+                      {kitchenPassMsg.type === 'success' ? <Check className="w-4 h-4 shrink-0" /> : <span className="font-bold shrink-0">!</span>}
+                      {kitchenPassMsg.text}
+                    </div>
+                  )}
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    {/* New Password */}
+                    <div>
+                      <label className="block text-xs font-medium text-ink-600 mb-1">New Password</label>
+                      <div className="relative">
+                        <input
+                          type={showKitchenNew ? 'text' : 'password'}
+                          value={kitchenNewPass}
+                          onChange={(e) => setKitchenNewPass(e.target.value)}
+                          className="input-field pr-10 text-sm"
+                          placeholder="Enter new password"
+                        />
                         <button
                           type="button"
-                          onClick={() => {
-                            if (confirm('Are you sure you want to reset the Kitchen Screen password to default ("chefpassword")?')) {
-                              setSettings({ ...settings, chef_password: 'chefpassword' });
-                            }
-                          }}
-                          className="text-xs font-bold text-gold-600 hover:text-gold-700 underline cursor-pointer no-print focus:outline-none"
+                          onClick={() => setShowKitchenNew(!showKitchenNew)}
+                          className="absolute right-3 top-1/2 -translate-y-1/2 text-ink-400 hover:text-ink-700 transition-colors cursor-pointer"
                         >
-                          Reset Password
+                          {showKitchenNew ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                         </button>
-                      )}
+                      </div>
                     </div>
-                    <input
-                      type="text"
-                      value={settings.chef_use_admin_creds ? adminPassword : settings.chef_password}
-                      onChange={(e) => !settings.chef_use_admin_creds && setSettings({ ...settings, chef_password: e.target.value })}
-                      className="input-field font-mono text-sm disabled:opacity-60 disabled:cursor-not-allowed"
-                      placeholder="chefpassword"
-                      disabled={settings.chef_use_admin_creds}
-                    />
+
+                    {/* Confirm Password */}
+                    <div>
+                      <label className="block text-xs font-medium text-ink-600 mb-1">Confirm Password</label>
+                      <div className="relative">
+                        <input
+                          type={showKitchenConfirm ? 'text' : 'password'}
+                          value={kitchenConfirmPass}
+                          onChange={(e) => setKitchenConfirmPass(e.target.value)}
+                          className="input-field pr-10 text-sm"
+                          placeholder="Repeat new password"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setShowKitchenConfirm(!showKitchenConfirm)}
+                          className="absolute right-3 top-1/2 -translate-y-1/2 text-ink-400 hover:text-ink-700 transition-colors cursor-pointer"
+                        >
+                          {showKitchenConfirm ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                        </button>
+                      </div>
+                    </div>
                   </div>
+
+                  <button
+                    type="button"
+                    onClick={handleSetKitchenPassword}
+                    disabled={!kitchenNewPass || !kitchenConfirmPass}
+                    className="btn-secondary flex items-center gap-2 text-sm disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
+                  >
+                    <Lock className="w-4 h-4" /> Set Password
+                  </button>
+                </div>
+
+                {/* Share credentials box */}
+                <div className="p-4 bg-amber-50/60 border border-amber-200/60 rounded-xl space-y-3">
+                  <div className="flex items-center gap-2">
+                    <ChefHat className="w-4 h-4 text-amber-600 shrink-0" />
+                    <p className="text-xs font-bold text-amber-700 uppercase tracking-wide">Share with Kitchen Staff</p>
+                  </div>
+                  <p className="text-xs text-amber-700">
+                    On the <strong>kitchen device</strong>, open the sign-in page and click <em>"Explore Kitchen Display"</em> — then enter these credentials manually:
+                  </p>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="bg-white/70 border border-amber-200/60 rounded-lg px-3 py-2">
+                      <p className="text-[10px] font-bold uppercase text-amber-500 tracking-wider mb-0.5">Email</p>
+                      <p className="text-xs font-mono font-semibold text-ink-800 break-all">{settings.chef_email || '—'}</p>
+                    </div>
+                    <div className="bg-white/70 border border-amber-200/60 rounded-lg px-3 py-2">
+                      <p className="text-[10px] font-bold uppercase text-amber-500 tracking-wider mb-0.5">Password</p>
+                      <p className="text-xs font-mono font-semibold text-ink-800">{settings.chef_password || '—'}</p>
+                    </div>
+                  </div>
+                  <p className="text-[10px] text-amber-600/70">
+                    💡 Save settings first before sharing. These credentials only grant access to the Kitchen Screen — not the main dashboard.
+                  </p>
                 </div>
               </div>
             </>
@@ -1143,7 +1216,7 @@ export default function SettingsPage() {
                         </div>
                         <div>
                           <span className="text-ink-450 block">Monthly Price After Trial</span>
-                          <span className="font-bold text-ink-800 mt-0.5 block">₹200.00 / month</span>
+                          <span className="font-bold text-ink-800 mt-0.5 block">₹199.00 / month</span>
                         </div>
                       </div>
 
@@ -1163,7 +1236,7 @@ export default function SettingsPage() {
                           <span className="text-[10px] font-bold uppercase tracking-wider text-[#B88A52] bg-[#B88A52]/10 border border-[#B88A52]/20 px-2 py-0.5 rounded-md">
                             Pro License
                           </span>
-                          <h3 className="font-heading text-lg font-bold text-white mt-1">₹200.00 / month</h3>
+                          <h3 className="font-heading text-lg font-bold text-white mt-1">₹199.00 / month</h3>
                           <p className="text-xs text-[#A69B8E]">Automatically renews every month</p>
                         </div>
                         <div className="w-12 h-12 rounded-xl bg-[#B88A52]/10 border border-[#B88A52]/30 flex items-center justify-center text-[#EAD0A8] animate-pulse">
@@ -1212,7 +1285,7 @@ export default function SettingsPage() {
                     <Sparkles className="w-4 h-4 text-gold-500" /> Premium Benefits
                   </h3>
                   <p className="text-xs text-ink-500 leading-normal">
-                    Subscribe to QRestro Premium for ₹200/month to get professional tools for your restaurant:
+                    Subscribe to QRestro Premium for ₹199/month to get professional tools for your restaurant:
                   </p>
                   
                   <ul className="space-y-3 pt-2">
@@ -1250,7 +1323,7 @@ export default function SettingsPage() {
                         </div>
                         <div>
                           <h3 className="font-heading font-bold text-ink-900 text-base">Subscribe to Premium</h3>
-                          <p className="text-[10px] text-ink-450 mt-0.5">₹200.00 billed monthly</p>
+                          <p className="text-[10px] text-ink-450 mt-0.5">₹199.00 / mo + ₹5.00 platform fee</p>
                         </div>
                       </div>
                       <button 
@@ -1271,62 +1344,25 @@ export default function SettingsPage() {
                       </div>
                     )}
 
-                    <form onSubmit={handlePaymentSubmit} className="space-y-4">
-                      <div>
-                        <label className="block text-xs font-bold text-ink-700 mb-1">Cardholder Name</label>
-                        <input
-                          type="text"
-                          required
-                          value={checkoutCardName}
-                          onChange={(e) => setCheckoutCardName(e.target.value)}
-                          placeholder="e.g. Virat Kohli"
-                          className="input-field text-sm"
-                        />
-                      </div>
-
-                      <div>
-                        <label className="block text-xs font-bold text-ink-700 mb-1">Card Number</label>
-                        <div className="relative">
-                          <input
-                            type="text"
-                            required
-                            value={checkoutCardNumber}
-                            onChange={(e) => handleCardNumberChange(e.target.value)}
-                            placeholder="0000 0000 0000 0000"
-                            className="input-field text-sm font-mono tracking-wider pl-10"
-                          />
-                          <CreditCard className="w-4.5 h-4.5 text-ink-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                    <div className="space-y-4">
+                      <div className="bg-cream-50 rounded-xl p-4 border border-cream-200/50 space-y-2.5">
+                        <div className="flex justify-between text-xs text-ink-600">
+                          <span>Premium Plan</span>
+                          <span>₹199.00</span>
                         </div>
-                      </div>
-
-                      <div className="grid grid-cols-2 gap-4">
-                        <div>
-                          <label className="block text-xs font-bold text-ink-700 mb-1">Expiry Date</label>
-                          <input
-                            type="text"
-                            required
-                            value={checkoutCardExpiry}
-                            onChange={(e) => handleExpiryChange(e.target.value)}
-                            placeholder="MM/YY"
-                            className="input-field text-sm font-mono tracking-wider text-center"
-                          />
+                        <div className="flex justify-between text-xs text-ink-600">
+                          <span>Platform Fee</span>
+                          <span>₹5.00</span>
                         </div>
-                        <div>
-                          <label className="block text-xs font-bold text-ink-700 mb-1">CVV / CVC</label>
-                          <input
-                            type="password"
-                            required
-                            value={checkoutCardCvv}
-                            onChange={(e) => handleCvvChange(e.target.value)}
-                            placeholder="•••"
-                            className="input-field text-sm font-mono tracking-widest text-center"
-                          />
+                        <div className="flex justify-between text-sm font-bold text-ink-900 pt-2 border-t border-cream-200/80">
+                          <span>Total Amount</span>
+                          <span className="text-[#B88A52]">₹204.00</span>
                         </div>
                       </div>
 
                       <div className="flex items-center gap-2.5 p-3 bg-cream-50 rounded-xl border border-cream-100 text-[10px] text-ink-450">
                         <ShieldCheck className="w-4.5 h-4.5 text-emerald-600 shrink-0" />
-                        <span>Secure checkout. QRestro simulates bank-level encryption & sandbox authorizations for demo purposes.</span>
+                        <span>Secure payment processed via Razorpay. UPI, Cards, Netbanking, and Wallet payment options are supported.</span>
                       </div>
 
                       <div className="flex gap-3 pt-2">
@@ -1336,19 +1372,24 @@ export default function SettingsPage() {
                             setIsUpgradeModalOpen(false);
                             setCheckoutError(null);
                           }}
-                          className="btn-secondary flex-1 py-2.5 cursor-pointer"
+                          className="btn-secondary flex-1 py-2.5 cursor-pointer text-sm font-sans"
                         >
                           Cancel
                         </button>
                         <button
-                          type="submit"
-                          className="btn-primary flex-1 py-2.5 flex items-center justify-center gap-1.5 cursor-pointer"
+                          onClick={handleRazorpaySubscription}
+                          disabled={razorpayLoading}
+                          className="btn-primary flex-1 py-2.5 flex items-center justify-center gap-1.5 cursor-pointer text-sm font-sans"
                         >
-                          <Sparkles className="w-4.5 h-4.5" />
-                          <span>Pay ₹200.00</span>
+                          {razorpayLoading ? (
+                            <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                          ) : (
+                            <Sparkles className="w-4.5 h-4.5" />
+                          )}
+                          <span>{razorpayLoading ? 'Loading...' : 'Pay ₹204.00'}</span>
                         </button>
                       </div>
-                    </form>
+                    </div>
                   </>
                 ) : (
                   <div className="py-8 flex flex-col items-center justify-center text-center space-y-4">
@@ -1366,13 +1407,11 @@ export default function SettingsPage() {
                       <div className="flex flex-col items-center space-y-4">
                         <div className="w-12 h-12 border-3 border-cream-200 border-t-[#B88A52] rounded-full animate-spin" />
                         <div className="space-y-1">
-                          <p className="text-sm font-bold text-ink-800">
+                          <p className="text-sm font-bold text-[#1a1208]">
                             {paymentStep === 'initiating' && "Initiating secure transaction..."}
-                            {paymentStep === 'verifying' && "Verifying card credentials..."}
-                            {paymentStep === 'authorizing' && "Authorizing payment (₹200.00)..."}
-                            {paymentStep === 'activating' && "Activating Premium access..."}
+                            {paymentStep === 'verifying' && "Verifying payment signature..."}
                           </p>
-                          <p className="text-[10px] text-ink-440">Please do not refresh or close the page</p>
+                          <p className="text-[10px] text-ink-440">Please do not refresh or close this page</p>
                         </div>
                       </div>
                     )}

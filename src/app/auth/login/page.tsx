@@ -181,63 +181,39 @@ export default function LoginPage() {
       !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ||
       process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY === 'your-anon-key-here';
 
-    let targetChefEmail = 'supportqrestro@gmail.com';
-    let targetChefPassword = 'fsilnpkgqklmmdid';
-    
+    // ─── Read kitchen credentials from Settings ────────────────────
+    let kitchenEmail = 'kitchen@qrestro.com';
+    let kitchenPassword = 'chefpassword';
     try {
       const saved = localStorage.getItem('qrestro_demo_restaurant');
       if (saved) {
         const parsed = JSON.parse(saved);
-        const useAdmin = parsed.chef_use_admin_creds !== undefined ? parsed.chef_use_admin_creds === true : true;
-        if (useAdmin) {
-          const adminMatch = document.cookie.match(/(?:^|; )qrestro_demo_email=([^;]*)/);
-          targetChefEmail = adminMatch ? decodeURIComponent(adminMatch[1]) : 'supportqrestro@gmail.com';
-          targetChefPassword = parsed.chef_password || 'fsilnpkgqklmmdid';
-        } else {
-          targetChefEmail = parsed.chef_email || 'supportqrestro@gmail.com';
-          targetChefPassword = parsed.chef_password || 'fsilnpkgqklmmdid';
-        }
+        if (parsed.chef_email)    kitchenEmail    = parsed.chef_email;
+        if (parsed.chef_password) kitchenPassword = parsed.chef_password;
       }
     } catch {}
 
-    const isKitchenUser = email.toLowerCase().trim() === targetChefEmail.toLowerCase().trim();
+    const isKitchenUser = email.toLowerCase().trim() === kitchenEmail.toLowerCase().trim();
 
     if (isDemoMode) {
       try {
         await new Promise((resolve) => setTimeout(resolve, 900));
-        
-        // If they enter the chef email but get the password wrong, throw error
-        if (isKitchenUser && password !== targetChefPassword) {
+
+        // Kitchen user: validate password
+        if (isKitchenUser && password !== kitchenPassword) {
           setError('Invalid credentials for Kitchen Display.');
-          setLoading(false);
-          return;
-        }
-
-        // Validate customized Administrator credentials if provided
-        const adminEmailMatch = document.cookie.match(/(?:^|; )qrestro_demo_email=([^;]*)/);
-        const adminPasswordMatch = document.cookie.match(/(?:^|; )qrestro_demo_password=([^;]*)/);
-        const adminNameMatch = document.cookie.match(/(?:^|; )qrestro_demo_name=([^;]*)/);
-
-        const savedAdminEmail = adminEmailMatch ? decodeURIComponent(adminEmailMatch[1]) : 'supportqrestro@gmail.com';
-        const savedAdminPassword = adminPasswordMatch ? decodeURIComponent(adminPasswordMatch[1]) : 'fsilnpkgqklmmdid';
-        const savedAdminName = adminNameMatch ? decodeURIComponent(adminNameMatch[1]) : 'Virat Kohli';
-
-        const isAdminAttempt = email.toLowerCase().trim() === savedAdminEmail.toLowerCase().trim();
-
-        if (isAdminAttempt && password !== savedAdminPassword) {
-          setError('Invalid administrator email or password.');
           setLoading(false);
           return;
         }
 
         document.cookie = 'qrestro_demo=true;path=/;max-age=86400';
         const guessedName = email.split('@')[0];
-        const formattedName = isKitchenUser 
-          ? 'Chef' 
-          : (isAdminAttempt ? savedAdminName : (guessedName.charAt(0).toUpperCase() + guessedName.slice(1)));
-        
+        const formattedName = isKitchenUser
+          ? 'Chef'
+          : (guessedName.charAt(0).toUpperCase() + guessedName.slice(1));
+
         document.cookie = `qrestro_demo_name=${encodeURIComponent(formattedName)};path=/;max-age=86400`;
-        
+
         if (isKitchenUser) {
           window.location.href = '/kitchen-display';
         } else {
@@ -301,25 +277,20 @@ export default function LoginPage() {
   };
 
   const handleKitchenDemoLogin = () => {
-    let targetChefEmail = 'supportqrestro@gmail.com';
-    let targetChefPassword = 'fsilnpkgqklmmdid';
+    // Read the kitchen credentials set in Settings → Kitchen Screen Credentials
+    let kitchenEmail = 'kitchen@qrestro.com';
+    let kitchenPassword = 'chefpassword';
     try {
       const saved = localStorage.getItem('qrestro_demo_restaurant');
       if (saved) {
         const parsed = JSON.parse(saved);
-        const useAdmin = parsed.chef_use_admin_creds !== undefined ? parsed.chef_use_admin_creds === true : true;
-        if (useAdmin) {
-          const adminMatch = document.cookie.match(/(?:^|; )qrestro_demo_email=([^;]*)/);
-          targetChefEmail = adminMatch ? decodeURIComponent(adminMatch[1]) : 'supportqrestro@gmail.com';
-          targetChefPassword = parsed.chef_password || 'fsilnpkgqklmmdid';
-        } else {
-          targetChefEmail = parsed.chef_email || 'supportqrestro@gmail.com';
-          targetChefPassword = parsed.chef_password || 'fsilnpkgqklmmdid';
-        }
+        if (parsed.chef_email) kitchenEmail = parsed.chef_email;
+        if (parsed.chef_password) kitchenPassword = parsed.chef_password;
       }
     } catch {}
-    setEmail(targetChefEmail);
-    setPassword(targetChefPassword);
+    // Pre-fill the form so staff can confirm and sign in
+    setEmail(kitchenEmail);
+    setPassword(kitchenPassword);
   };
 
   return (
