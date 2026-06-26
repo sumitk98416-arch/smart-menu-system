@@ -31,8 +31,10 @@ export default function TablesPage() {
   const [bulkCapacity, setBulkCapacity] = useState('4');
   const [bulkIsVip, setBulkIsVip] = useState(false);
 
-  const getQRUrl = (table: Table) =>
-    `${APP_URL}/order/${demoRestaurant.slug}/${table.id}`;
+  const getQRUrl = (table: Table) => {
+    const base = typeof window !== 'undefined' ? window.location.origin : APP_URL;
+    return `${base}/order/${demoRestaurant.slug}/${table.id}`;
+  };
 
   const handleAddTable = () => {
     if (!newTableNumber.trim()) return;
