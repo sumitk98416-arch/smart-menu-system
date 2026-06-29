@@ -557,6 +557,55 @@ export default function HomePage() {
   const [blogOpen, setBlogOpen] = useState(false);
   const [contactOpen, setContactOpen] = useState(false);
 
+  // Synchronize modal states with URL hash for seamless back-button support
+  useEffect(() => {
+    const handleHashChange = () => {
+      const hash = window.location.hash;
+      setAboutOpen(hash === '#about');
+      setChangelogOpen(hash === '#changelog');
+      setPrivacyOpen(hash === '#privacy');
+      setTermsOpen(hash === '#terms');
+      setBlogOpen(hash === '#blog');
+      setContactOpen(hash === '#contact');
+    };
+
+    window.addEventListener('hashchange', handleHashChange);
+    // Run initially in case page loaded with a hash
+    handleHashChange();
+
+    return () => window.removeEventListener('hashchange', handleHashChange);
+  }, []);
+
+  useEffect(() => {
+    if (aboutOpen) window.location.hash = 'about';
+    else if (window.location.hash === '#about') window.location.hash = '';
+  }, [aboutOpen]);
+
+  useEffect(() => {
+    if (changelogOpen) window.location.hash = 'changelog';
+    else if (window.location.hash === '#changelog') window.location.hash = '';
+  }, [changelogOpen]);
+
+  useEffect(() => {
+    if (privacyOpen) window.location.hash = 'privacy';
+    else if (window.location.hash === '#privacy') window.location.hash = '';
+  }, [privacyOpen]);
+
+  useEffect(() => {
+    if (termsOpen) window.location.hash = 'terms';
+    else if (window.location.hash === '#terms') window.location.hash = '';
+  }, [termsOpen]);
+
+  useEffect(() => {
+    if (blogOpen) window.location.hash = 'blog';
+    else if (window.location.hash === '#blog') window.location.hash = '';
+  }, [blogOpen]);
+
+  useEffect(() => {
+    if (contactOpen) window.location.hash = 'contact';
+    else if (window.location.hash === '#contact') window.location.hash = '';
+  }, [contactOpen]);
+
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitSuccess, setSubmitSuccess] = useState(false);
 
