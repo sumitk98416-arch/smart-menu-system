@@ -45,6 +45,14 @@ export default function CustomerMenuPage() {
         }
       } catch {}
 
+      if (params.restaurantSlug === 'the-golden-plate') {
+        setRestaurantLogo('default');
+        setRestaurantName('The Golden Plate');
+        setCategories(getDemoMenuWithCategories(true));
+        setIsLoaded(true);
+        return;
+      }
+
       // Load menu from the cloud API
       fetch(`/api/menu/public?slug=${params.restaurantSlug}`)
         .then((res) => {
