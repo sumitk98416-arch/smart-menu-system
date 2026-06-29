@@ -107,7 +107,7 @@ export default function OrderStatusPage() {
               setPaymentStatus('paid');
 
               // Update the order list in localStorage so the kitchen/admin sees it instantly
-              const storedOrdersRaw = localStorage.getItem('tabletap_demo_orders');
+              const storedOrdersRaw = localStorage.getItem('qrestro_demo_orders');
               if (storedOrdersRaw) {
                 const currentOrders = JSON.parse(storedOrdersRaw);
                 const updatedOrders = currentOrders.map((o: any) => {
@@ -120,11 +120,11 @@ export default function OrderStatusPage() {
                   }
                   return o;
                 });
-                localStorage.setItem('tabletap_demo_orders', JSON.stringify(updatedOrders));
+                localStorage.setItem('qrestro_demo_orders', JSON.stringify(updatedOrders));
 
                 // Dispatch storage event to trigger dashboard layout reload across tabs
                 window.dispatchEvent(new StorageEvent('storage', {
-                  key: 'tabletap_demo_orders',
+                  key: 'qrestro_demo_orders',
                   newValue: JSON.stringify(updatedOrders),
                 }));
               }
