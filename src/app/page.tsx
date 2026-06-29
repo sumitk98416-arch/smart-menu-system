@@ -539,8 +539,10 @@ function PortalIntroSequence({ onEnter, isExiting }: PortalIntroSequenceProps) {
 export default function HomePage() {
   const [portalEntered, setPortalEntered] = useState(false);
   const [showPortalIntro, setShowPortalIntro] = useState(true);
+  const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
+    setMounted(true);
     if (typeof window !== 'undefined') {
       const entered = sessionStorage.getItem('qrestro_portal_entered') === 'true';
       if (entered) {
@@ -662,7 +664,7 @@ export default function HomePage() {
 
   return (
     <>
-      {showPortalIntro && (
+      {mounted && showPortalIntro && (
         <PortalIntroSequence 
           onEnter={() => {
             setPortalEntered(true);

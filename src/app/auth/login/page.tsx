@@ -362,6 +362,14 @@ export default function LoginPage() {
         <div className="absolute bottom-0 left-0 w-60 h-60 bg-purple-900/8 rounded-full blur-[90px] pointer-events-none" />
 
         <div className="w-full max-w-md relative z-10 animate-fade-in">
+          {/* Mobile Logo */}
+          <Link href="/" className="lg:hidden flex items-center gap-3 mb-8 hover:opacity-85 transition-opacity">
+            <div className="w-12 h-12 bg-gradient-to-br from-[#B88A52] to-[#8C6028] rounded-xl flex items-center justify-center shadow-md">
+              <QRestroLogo size={36} />
+            </div>
+            <span className="font-heading text-2xl font-bold text-white tracking-wide">QRestro</span>
+          </Link>
+
           {view === 'forgot' ? (
             /* ═════════ Forgot Password — 3-step OTP Flow ═════════ */
             <>
