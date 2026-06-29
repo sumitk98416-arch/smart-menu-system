@@ -74,6 +74,7 @@ export default function ContactsPage() {
   const [customContacts, setCustomContacts] = useState<ContactItem[]>([]);
   const [suppliersList, setSuppliersList] = useState<ContactItem[]>([]);
   const [staffList, setStaffList] = useState<ContactItem[]>([]);
+  const [deletedContactIds, setDeletedContactIds] = useState<string[]>([]);
   
   // Overrides for non-custom contacts (emergency, supplier, staff)
   const [contactsOverrides, setContactsOverrides] = useState<Record<string, Partial<ContactItem>>>({});
@@ -104,6 +105,14 @@ export default function ContactsPage() {
       if (savedCustom) {
         try {
           setCustomContacts(JSON.parse(savedCustom));
+        } catch {}
+      }
+
+      // Deleted contact IDs
+      const savedDeleted = localStorage.getItem('qrestro_deleted_contact_ids');
+      if (savedDeleted) {
+        try {
+          setDeletedContactIds(JSON.parse(savedDeleted));
         } catch {}
       }
 
@@ -181,6 +190,12 @@ export default function ContactsPage() {
     localStorage.setItem('qrestro_contacts_overrides', JSON.stringify(updatedOverrides));
   };
 
+  // Save deleted contact IDs to LocalStorage
+  const saveDeletedIds = (ids: string[]) => {
+    setDeletedContactIds(ids);
+    localStorage.setItem('qrestro_deleted_contact_ids', JSON.stringify(ids));
+  };
+
   // 2. Combine all data sources and merge local overrides
   const allContacts = useMemo(() => {
     const baseList = [
@@ -190,19 +205,21 @@ export default function ContactsPage() {
       ...customContacts
     ];
 
-    return baseList.map(c => {
-      const override = contactsOverrides[c.id];
-      if (override) {
-        return {
-          ...c,
-          ...override,
-          id: c.id, // ID cannot be altered
-          category: c.category // Category cannot be altered
-        };
-      }
-      return c;
-    });
-  }, [suppliersList, staffList, customContacts, contactsOverrides]);
+    return baseList
+      .filter(c => !deletedContactIds.includes(c.id))
+      .map(c => {
+        const override = contactsOverrides[c.id];
+        if (override) {
+          return {
+            ...c,
+            ...override,
+            id: c.id, // ID cannot be altered
+            category: c.category // Category cannot be altered
+          };
+        }
+        return c;
+      });
+  }, [suppliersList, staffList, customContacts, contactsOverrides, deletedContactIds]);
 
   // 3. Search and filtering logic
   const filteredContacts = useMemo(() => {
@@ -248,8 +265,8 @@ export default function ContactsPage() {
     if (!formState.name.trim() || !formState.phone.trim()) return;
 
     if (editingContact) {
-      // If it's a custom contact (or doesn't match a default prefix id)
-      if (editingContact.category === 'custom' && !editingContact.id.startsWith('em-') && !editingContact.id.startsWith('sup-') && !editingContact.id.startsWith('staff-')) {
+      // If it's a custom contact (created by user)
+      if (editingContact.id.startsWith('custom-')) {
         const updated = customContacts.map(c =>
           c.id === editingContact.id
             ? {
@@ -318,9 +335,13 @@ export default function ContactsPage() {
   };
 
   const handleDeleteContact = (id: string) => {
-    if (confirm('Are you sure you want to delete this custom contact?')) {
-      const updated = customContacts.filter(c => c.id !== id);
-      saveCustomContacts(updated);
+    if (confirm('Are you sure you want to delete this contact?')) {
+      if (id.startsWith('custom-')) {
+        const updated = customContacts.filter(c => c.id !== id);
+        saveCustomContacts(updated);
+      } else {
+        saveDeletedIds([...deletedContactIds, id]);
+      }
     }
   };
 
@@ -452,7 +473,7 @@ export default function ContactsPage() {
             let avatarStyle = 'bg-gray-100 text-[#5A5348]';
             let cardAccent = 'hover:border-[#B88A52]/20';
 
-            const isCustom = contact.category === 'custom' && !contact.id.startsWith('em-') && !contact.id.startsWith('sup-') && !contact.id.startsWith('staff-');
+            const isCustom = contact.id.startsWith('custom-');
             const hasOverride = !!contactsOverrides[contact.id];
 
             if (contact.category === 'emergency') {
@@ -618,25 +639,23 @@ export default function ContactsPage() {
                   </button>
 
                   {/* Custom contact: Delete | Default contact overridden: Reset */}
-                  {isCustom ? (
+                  <button
+                    onClick={() => handleDeleteContact(contact.id)}
+                    className="p-1.5 rounded-lg border border-rose-100 hover:bg-rose-50 text-rose-500 hover:text-rose-700 transition-colors cursor-pointer"
+                    title="Delete Contact"
+                  >
+                    <Trash2 className="w-3 h-3" />
+                  </button>
+
+                  {!isCustom && hasOverride && (
                     <button
-                      onClick={() => handleDeleteContact(contact.id)}
-                      className="p-1.5 rounded-lg border border-rose-100 hover:bg-rose-50 text-rose-500 hover:text-rose-700 transition-colors cursor-pointer"
-                      title="Delete Custom Contact"
+                      onClick={() => handleResetContact(contact.id)}
+                      className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg border border-amber-100 hover:bg-amber-50 text-amber-600 hover:text-amber-800 text-[10px] font-bold transition-all cursor-pointer"
+                      title="Reset custom overrides back to defaults"
                     >
-                      <Trash2 className="w-3 h-3" />
+                      <RotateCcw className="w-3 h-3 animate-reverse" />
+                      <span>Reset</span>
                     </button>
-                  ) : (
-                    hasOverride && (
-                      <button
-                        onClick={() => handleResetContact(contact.id)}
-                        className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg border border-amber-100 hover:bg-amber-50 text-amber-600 hover:text-amber-800 text-[10px] font-bold transition-all cursor-pointer"
-                        title="Reset custom overrides back to defaults"
-                      >
-                        <RotateCcw className="w-3 h-3 animate-reverse" />
-                        <span>Reset</span>
-                      </button>
-                    )
                   )}
                 </div>
               </div>
@@ -671,7 +690,7 @@ export default function ContactsPage() {
               <div>
                 <label className="block text-[10px] uppercase tracking-wider font-extrabold text-[#8C8375] mb-1.5">Category</label>
                 <select
-                  disabled={editingContact ? editingContact.category !== 'custom' : false}
+                  disabled={editingContact ? !editingContact.id.startsWith('custom-') : false}
                   value={formState.category}
                   onChange={(e) => setFormState(prev => ({ ...prev, category: e.target.value as any }))}
                   className="w-full text-xs font-bold px-3 py-2 border border-[#E6E1DA] focus:border-[#B88A52] focus:ring-1 focus:ring-[#B88A52] rounded-xl outline-none text-[#5A5348] bg-white cursor-pointer disabled:bg-gray-100 disabled:text-gray-400 disabled:cursor-not-allowed"
