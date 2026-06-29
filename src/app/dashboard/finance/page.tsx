@@ -103,6 +103,7 @@ export default function FinancePage() {
 
   // Core persistence states loaded from localStorage
   const [restaurantName, setRestaurantName] = useState('The Golden Plate');
+  const [isFresh, setIsFresh] = useState(false);
   const [cgstRate, setCgstRate] = useState(2.5);
   const [sgstRate, setSgstRate] = useState(2.5);
   const [serviceChargeRate, setServiceChargeRate] = useState(0);
@@ -121,7 +122,8 @@ export default function FinancePage() {
   // Load persistence states
   useEffect(() => {
     if (typeof window !== 'undefined') {
-      const isFresh = localStorage.getItem('qrestro_demo_fresh_signup') === 'true';
+      const fresh = localStorage.getItem('qrestro_demo_fresh_signup') === 'true';
+      setIsFresh(fresh);
 
       // Restaurant Details
       const savedRestaurant = localStorage.getItem('qrestro_demo_restaurant');
@@ -136,14 +138,18 @@ export default function FinancePage() {
       }
 
       // Orders (Unified Key 'qrestro_demo_orders')
-      setOrders(loadDemoOrders());
+      if (fresh) {
+        setOrders([]);
+      } else {
+        setOrders(loadDemoOrders());
+      }
 
       // Purchase Orders
       const storedPOs = localStorage.getItem('qrestro_purchase_orders');
       if (storedPOs) {
         try { setPurchaseOrders(JSON.parse(storedPOs)); } catch {}
       } else {
-        const defaultPOs: PurchaseOrder[] = isFresh ? [] : [
+        const defaultPOs: PurchaseOrder[] = fresh ? [] : [
           { id: 'po-1', itemName: 'Chicken (Boneless)', quantity: 30, unit: 'kg', orderDate: '2026-05-25', supplier: 'Prime Meats Ltd', status: 'completed', totalCost: 8400, purchasePrice: 280 },
           { id: 'po-2', itemName: 'Paneer', quantity: 20, unit: 'kg', orderDate: '2026-05-26', supplier: 'Dairyland Foods', status: 'completed', totalCost: 7000, purchasePrice: 350 },
           { id: 'po-3', itemName: 'Milk', quantity: 50, unit: 'Ltr.', orderDate: '2026-05-28', supplier: 'Dairyland Foods', status: 'completed', totalCost: 2750, purchasePrice: 55 },
@@ -159,7 +165,7 @@ export default function FinancePage() {
       if (storedWastage) {
         try { setWastageData(JSON.parse(storedWastage)); } catch {}
       } else {
-        const defaultWastage: WastageItem[] = isFresh ? [] : [
+        const defaultWastage: WastageItem[] = fresh ? [] : [
           { id: 'w-1', name: 'Tomato', date: '2026-05-26', quantity: 3, unit: 'kg', reason: 'Spoilage', cost: 120 },
           { id: 'w-2', name: 'Milk', date: '2026-05-27', quantity: 5, unit: 'Ltr.', reason: 'Expired', cost: 275 },
           { id: 'w-3', name: 'Lettuce', date: '2026-05-28', quantity: 2, unit: 'kg', reason: 'Spoilage', cost: 300 },
@@ -173,7 +179,7 @@ export default function FinancePage() {
       if (storedStaff) {
         try { setStaffList(JSON.parse(storedStaff)); } catch {}
       } else {
-        const defaultStaff: StaffMember[] = isFresh ? [] : [
+        const defaultStaff: StaffMember[] = fresh ? [] : [
           { id: 'emp-1', name: 'Ramesh Kumar', role: 'chef', hourlyRate: 35000 },
           { id: 'emp-2', name: 'Jenny Doe', role: 'waiter', hourlyRate: 20000 },
           { id: 'emp-3', name: 'Vicky Singh', role: 'manager', hourlyRate: 50000 },
@@ -191,7 +197,7 @@ export default function FinancePage() {
       if (storedPayroll) {
         try { setPayrollList(JSON.parse(storedPayroll)); } catch {}
       } else {
-        const defaultPayroll: PayrollRecord[] = isFresh ? [] : [
+        const defaultPayroll: PayrollRecord[] = fresh ? [] : [
           { monthKey: '2026-05', staffId: 'emp-1', bonus: 2000, deductions: 500, status: 'Paid' },
           { monthKey: '2026-05', staffId: 'emp-2', bonus: 1000, deductions: 0, status: 'Paid' },
           { monthKey: '2026-05', staffId: 'emp-3', bonus: 3000, deductions: 1000, status: 'Paid' },
@@ -209,7 +215,7 @@ export default function FinancePage() {
       if (storedExpenses) {
         try { setOperatingExpenses(JSON.parse(storedExpenses)); } catch {}
       } else {
-        const defaultExpenses: OperatingExpense[] = isFresh ? [] : [
+        const defaultExpenses: OperatingExpense[] = fresh ? [] : [
           { id: 'oe-1', category: 'rent', amount: 45000, date: '2026-05-01', description: 'Monthly commercial restaurant shop rent' },
           { id: 'oe-2', category: 'utilities', amount: 12500, date: '2026-05-05', description: 'Commercial kitchen electricity charges' },
           { id: 'oe-3', category: 'utilities', amount: 2500, date: '2026-05-06', description: 'High-speed internet & water bills' },
@@ -324,7 +330,7 @@ export default function FinancePage() {
     let netSales = servedOrders.reduce((sum, o) => sum + (o.total_amount || 0), 0);
 
     // Scaling fallbacks for empty demo setups
-    if (netSales === 0) {
+    if (netSales === 0 && !isFresh) {
       netSales = 224500;
     } else if (activeRange === '6months') {
       netSales *= 5.6;
@@ -345,7 +351,7 @@ export default function FinancePage() {
     // 3.3 Operating Expenses (OpEx)
     // Payroll costs
     let payrollExpense = staffList.reduce((sum, emp) => sum + emp.hourlyRate, 0);
-    if (payrollExpense === 0) payrollExpense = 200000;
+    if (payrollExpense === 0 && !isFresh) payrollExpense = 200000;
     const totalBonuses = payrollList.reduce((sum, r) => sum + (r.monthKey === '2026-05' ? r.bonus : 0), 0);
     const totalDeductions = payrollList.reduce((sum, r) => sum + (r.monthKey === '2026-05' ? r.deductions : 0), 0);
     payrollExpense += (totalBonuses - totalDeductions);
@@ -363,7 +369,7 @@ export default function FinancePage() {
     const otherExpenses = operatingExpenses.filter(oe => oe.category === 'other').reduce((sum, oe) => sum + oe.amount, 0);
 
     let loggedOverheadsTotal = rentExpenses + utilitiesExpenses + maintenanceExpenses + marketingExpenses + otherExpenses;
-    if (loggedOverheadsTotal === 0) {
+    if (loggedOverheadsTotal === 0 && !isFresh) {
       loggedOverheadsTotal = 74800; // default overheads if empty
     }
 
@@ -418,7 +424,7 @@ export default function FinancePage() {
       }, 0);
 
       // Add default sales seeding for demonstration if empty
-      if (unitsSold === 0) {
+      if (unitsSold === 0 && !isFresh) {
         const seedId = Number(item.id.replace('item-', '')) || 1;
         unitsSold = (seedId * 7 + 13) % 24; // realistic mock units
       }

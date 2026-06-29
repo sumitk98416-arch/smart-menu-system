@@ -296,14 +296,14 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               setUserName(user.user_metadata?.name || user.email?.split('@')[0] || 'Owner');
               setUserEmail(user.email || '');
             } else {
-              window.location.href = '/auth/login';
+              window.location.replace('/auth/login');
             }
           } catch (e) {
             console.error('Error fetching Supabase user in layout:', e);
-            window.location.href = '/auth/login';
+            window.location.replace('/auth/login');
           }
         } else {
-          window.location.href = '/auth/login';
+          window.location.replace('/auth/login');
         }
       }
     };
@@ -608,7 +608,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 localStorage.removeItem('qrestro_demo_restaurant');
                 localStorage.removeItem('qrestro_demo_fresh_signup');
               } catch { }
-              window.location.href = '/auth/login';
+              window.location.replace('/auth/login');
             }}
             className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-ink-500 hover:bg-cream-50 hover:text-ink-900 transition-all w-full cursor-pointer"
           >

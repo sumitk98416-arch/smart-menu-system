@@ -141,18 +141,9 @@ const updateMaterialBatches = (
   return batches;
 };
 
-function InventoryPageContent() {
-  // 1. Initial State Data matching reference image + realistic extensions
-  const [rawMaterials, setRawMaterials] = useState<RawMaterial[]>(() => {
-    if (typeof window !== 'undefined') {
-      const isFresh = localStorage.getItem('qrestro_demo_fresh_signup') === 'true';
-      const stored = localStorage.getItem('qrestro_raw_materials');
-      if (stored) return JSON.parse(stored);
-      if (isFresh) return [];
-    }
-    const mockItems: RawMaterial[] = [
-      // ── VEGETABLES ──
-      { id: 'rm-1', name: 'Onion', category: 'vegetables', existingStock: 80, unit: 'kg', openingStock: 100, closingStock: 80, currentStock: 80, status: 'good', costPrice: 25, supplier: 'Fresh Farm Pvt Ltd', expiryDate: '2026-06-10', minStockAlert: 15, storageLocation: 'Dry Store A', lastRestocked: '2026-05-28' },
+const getMockMaterials = (): RawMaterial[] => {
+  const mockItems: RawMaterial[] = [
+    { id: 'rm-1', name: 'Onion', category: 'vegetables', existingStock: 80, unit: 'kg', openingStock: 100, closingStock: 80, currentStock: 80, status: 'good', costPrice: 25, supplier: 'Fresh Farm Pvt Ltd', expiryDate: '2026-06-10', minStockAlert: 15, storageLocation: 'Dry Store A', lastRestocked: '2026-05-28' },
     { id: 'rm-2', name: 'Tomato', category: 'vegetables', existingStock: 8, unit: 'kg', openingStock: 40, closingStock: 8, currentStock: 8, status: 'low', costPrice: 40, supplier: 'Fresh Farm Pvt Ltd', expiryDate: '2026-06-05', minStockAlert: 10, storageLocation: 'Fridge B', lastRestocked: '2026-05-25' },
     { id: 'rm-3', name: 'Potato', category: 'vegetables', existingStock: 12, unit: 'kg', openingStock: 30, closingStock: 12, currentStock: 12, status: 'low', costPrice: 20, supplier: 'Fresh Farm Pvt Ltd', expiryDate: '2026-06-15', minStockAlert: 8, storageLocation: 'Dry Store A', lastRestocked: '2026-05-24' },
     { id: 'rm-4', name: 'Capsicum', category: 'vegetables', existingStock: 15, unit: 'kg', openingStock: 20, closingStock: 15, currentStock: 15, status: 'good', costPrice: 60, supplier: 'Fresh Farm Pvt Ltd', expiryDate: '2026-06-07', minStockAlert: 5, storageLocation: 'Fridge B', lastRestocked: '2026-05-27' },
@@ -160,113 +151,169 @@ function InventoryPageContent() {
     { id: 'rm-6', name: 'Ginger', category: 'vegetables', existingStock: 3, unit: 'kg', openingStock: 5, closingStock: 3, currentStock: 3, status: 'good', costPrice: 100, supplier: 'Fresh Farm Pvt Ltd', expiryDate: '2026-06-18', minStockAlert: 1, storageLocation: 'Dry Store A', lastRestocked: '2026-05-26' },
     { id: 'rm-7', name: 'Coriander', category: 'vegetables', existingStock: 2, unit: 'kg', openingStock: 3, closingStock: 2, currentStock: 2, status: 'good', costPrice: 80, supplier: 'Fresh Farm Pvt Ltd', expiryDate: '2026-06-03', minStockAlert: 0.5, storageLocation: 'Fridge B', lastRestocked: '2026-05-28' },
     { id: 'rm-8', name: 'Lettuce', category: 'vegetables', existingStock: 1, unit: 'kg', openingStock: 5, closingStock: 1, currentStock: 1, status: 'low', costPrice: 150, supplier: 'Fresh Farm Pvt Ltd', expiryDate: '2026-06-02', minStockAlert: 2, storageLocation: 'Fridge B', lastRestocked: '2026-05-25' },
-    // ── DAIRY ──
     { id: 'rm-9', name: 'Milk', category: 'dairy', existingStock: 40, unit: 'Ltr.', openingStock: 60, closingStock: 40, currentStock: 40, status: 'good', costPrice: 55, supplier: 'Dairyland Foods', expiryDate: '2026-06-01', minStockAlert: 10, storageLocation: 'Fridge A', lastRestocked: '2026-05-28' },
     { id: 'rm-10', name: 'Butter', category: 'dairy', existingStock: 8, unit: 'kg', openingStock: 10, closingStock: 8, currentStock: 8, status: 'good', costPrice: 480, supplier: 'Dairyland Foods', expiryDate: '2026-06-15', minStockAlert: 2, storageLocation: 'Fridge A', lastRestocked: '2026-05-26' },
     { id: 'rm-11', name: 'Cheese', category: 'dairy', existingStock: 4, unit: 'kg', openingStock: 6, closingStock: 4, currentStock: 4, status: 'good', costPrice: 550, supplier: 'Dairyland Foods', expiryDate: '2026-06-20', minStockAlert: 1, storageLocation: 'Fridge A', lastRestocked: '2026-05-25' },
     { id: 'rm-12', name: 'Paneer', category: 'dairy', existingStock: 45, unit: 'kg', openingStock: 50, closingStock: 45, currentStock: 45, status: 'good', costPrice: 350, supplier: 'Dairyland Foods', expiryDate: '2026-06-05', minStockAlert: 10, storageLocation: 'Fridge A', lastRestocked: '2026-05-27' },
     { id: 'rm-13', name: 'Cream (Amul)', category: 'dairy', existingStock: 255, unit: 'Ltr.', openingStock: 300, closingStock: 255, currentStock: 255, status: 'good', costPrice: 180, supplier: 'Dairyland Foods', expiryDate: '2026-06-10', minStockAlert: 50, storageLocation: 'Fridge A', lastRestocked: '2026-05-24' },
     { id: 'rm-14', name: 'Yogurt', category: 'dairy', existingStock: 15, unit: 'kg', openingStock: 20, closingStock: 15, currentStock: 15, status: 'good', costPrice: 80, supplier: 'Dairyland Foods', expiryDate: '2026-06-04', minStockAlert: 5, storageLocation: 'Fridge A', lastRestocked: '2026-05-27' },
-    // ── MEAT & SEAFOOD ──
     { id: 'rm-15', name: 'Chicken (Boneless)', category: 'meat', existingStock: 18, unit: 'kg', openingStock: 30, closingStock: 18, currentStock: 18, status: 'good', costPrice: 280, supplier: 'Prime Meats Ltd', expiryDate: '2026-06-01', minStockAlert: 5, storageLocation: 'Freezer A', lastRestocked: '2026-05-27' },
     { id: 'rm-16', name: 'Mutton', category: 'meat', existingStock: 5, unit: 'kg', openingStock: 15, closingStock: 5, currentStock: 5, status: 'low', costPrice: 650, supplier: 'Prime Meats Ltd', expiryDate: '2026-06-01', minStockAlert: 4, storageLocation: 'Freezer A', lastRestocked: '2026-05-26' },
     { id: 'rm-17', name: 'Fish (Rohu)', category: 'meat', existingStock: 8, unit: 'kg', openingStock: 12, closingStock: 8, currentStock: 8, status: 'good', costPrice: 220, supplier: 'Ocean Fresh Seafood', expiryDate: '2026-06-01', minStockAlert: 3, storageLocation: 'Freezer A', lastRestocked: '2026-05-28' },
     { id: 'rm-18', name: 'Prawns', category: 'meat', existingStock: 3, unit: 'kg', openingStock: 8, closingStock: 3, currentStock: 3, status: 'low', costPrice: 480, supplier: 'Ocean Fresh Seafood', expiryDate: '2026-06-01', minStockAlert: 2, storageLocation: 'Freezer A', lastRestocked: '2026-05-25' },
     { id: 'rm-19', name: 'Eggs', category: 'meat', existingStock: 72, unit: 'Pcs', openingStock: 120, closingStock: 72, currentStock: 72, status: 'good', costPrice: 7, supplier: 'Prime Meats Ltd', expiryDate: '2026-06-12', minStockAlert: 24, storageLocation: 'Fridge B', lastRestocked: '2026-05-27' },
-    // ── GRAINS & STAPLES ──
     { id: 'rm-20', name: 'Basmati Rice', category: 'grains', existingStock: 480, unit: 'kg', openingStock: 600, closingStock: 480, currentStock: 480, status: 'good', costPrice: 90, supplier: 'Grains & Spices Wholesale', expiryDate: '2027-05-01', minStockAlert: 100, storageLocation: 'Dry Store B', lastRestocked: '2026-05-20' },
     { id: 'rm-21', name: 'Atta (Wheat Flour)', category: 'grains', existingStock: 1020, unit: 'kg', openingStock: 1200, closingStock: 1020, currentStock: 1020, status: 'good', costPrice: 42, supplier: 'Grains & Spices Wholesale', expiryDate: '2026-11-01', minStockAlert: 200, storageLocation: 'Dry Store B', lastRestocked: '2026-05-18' },
     { id: 'rm-22', name: 'Maida', category: 'grains', existingStock: 80, unit: 'kg', openingStock: 100, closingStock: 80, currentStock: 80, status: 'good', costPrice: 38, supplier: 'Grains & Spices Wholesale', expiryDate: '2026-10-01', minStockAlert: 20, storageLocation: 'Dry Store B', lastRestocked: '2026-05-20' },
     { id: 'rm-23', name: 'Pasta', category: 'grains', existingStock: 12, unit: 'kg', openingStock: 20, closingStock: 12, currentStock: 12, status: 'good', costPrice: 120, supplier: 'Grains & Spices Wholesale', expiryDate: '2027-01-01', minStockAlert: 4, storageLocation: 'Dry Store B', lastRestocked: '2026-05-15' },
     { id: 'rm-24', name: 'Lentils (Dal)', category: 'grains', existingStock: 60, unit: 'kg', openingStock: 80, closingStock: 60, currentStock: 60, status: 'good', costPrice: 100, supplier: 'Grains & Spices Wholesale', expiryDate: '2027-03-01', minStockAlert: 15, storageLocation: 'Dry Store B', lastRestocked: '2026-05-15' },
-    // ── SPICES & SEASONINGS ──
     { id: 'rm-25', name: 'Salt', category: 'spices', existingStock: 15, unit: 'kg', openingStock: 20, closingStock: 15, currentStock: 15, status: 'good', costPrice: 18, supplier: 'Grains & Spices Wholesale', expiryDate: '2028-01-01', minStockAlert: 3, storageLocation: 'Spice Rack', lastRestocked: '2026-05-10' },
     { id: 'rm-26', name: 'Black Pepper', category: 'spices', existingStock: 1.5, unit: 'kg', openingStock: 3, closingStock: 1.5, currentStock: 1.5, status: 'good', costPrice: 600, supplier: 'Grains & Spices Wholesale', expiryDate: '2027-06-01', minStockAlert: 0.5, storageLocation: 'Spice Rack', lastRestocked: '2026-05-10' },
     { id: 'rm-27', name: 'Turmeric Powder', category: 'spices', existingStock: 2, unit: 'kg', openingStock: 3, closingStock: 2, currentStock: 2, status: 'good', costPrice: 180, supplier: 'Grains & Spices Wholesale', expiryDate: '2027-05-01', minStockAlert: 0.5, storageLocation: 'Spice Rack', lastRestocked: '2026-05-10' },
     { id: 'rm-28', name: 'Chili Powder', category: 'spices', existingStock: 0.8, unit: 'kg', openingStock: 3, closingStock: 0.8, currentStock: 0.8, status: 'low', costPrice: 200, supplier: 'Grains & Spices Wholesale', expiryDate: '2027-05-01', minStockAlert: 1, storageLocation: 'Spice Rack', lastRestocked: '2026-05-05' },
     { id: 'rm-29', name: 'Garam Masala', category: 'spices', existingStock: 1.2, unit: 'kg', openingStock: 2, closingStock: 1.2, currentStock: 1.2, status: 'good', costPrice: 350, supplier: 'Grains & Spices Wholesale', expiryDate: '2027-04-01', minStockAlert: 0.5, storageLocation: 'Spice Rack', lastRestocked: '2026-05-10' },
-    // ── OILS & LIQUIDS ──
     { id: 'rm-30', name: 'Cooking Oil', category: 'oils', existingStock: 180, unit: 'Ltr.', openingStock: 200, closingStock: 180, currentStock: 180, status: 'good', costPrice: 130, supplier: 'Grains & Spices Wholesale', expiryDate: '2027-01-01', minStockAlert: 30, storageLocation: 'Dry Store B', lastRestocked: '2026-05-15' },
     { id: 'rm-31', name: 'Olive Oil', category: 'oils', existingStock: 5, unit: 'Ltr.', openingStock: 8, closingStock: 5, currentStock: 5, status: 'good', costPrice: 600, supplier: 'Gourmet Imports', expiryDate: '2027-03-01', minStockAlert: 2, storageLocation: 'Dry Store B', lastRestocked: '2026-05-12' },
     { id: 'rm-32', name: 'Soy Sauce', category: 'oils', existingStock: 3, unit: 'Ltr.', openingStock: 5, closingStock: 3, currentStock: 3, status: 'good', costPrice: 200, supplier: 'Gourmet Imports', expiryDate: '2027-06-01', minStockAlert: 1, storageLocation: 'Dry Store B', lastRestocked: '2026-05-12' },
-    // ── BEVERAGES ──
     { id: 'rm-33', name: 'Soft Drinks (Cans)', category: 'beverages', existingStock: 60, unit: 'Pcs', openingStock: 120, closingStock: 60, currentStock: 60, status: 'good', costPrice: 40, supplier: 'Deluxe Spirits Ltd', expiryDate: '2026-12-01', minStockAlert: 24, storageLocation: 'Beverage Store', lastRestocked: '2026-05-22' },
     { id: 'rm-34', name: 'Mineral Water (500ml)', category: 'beverages', existingStock: 3, unit: 'Box', openingStock: 10, closingStock: 3, currentStock: 3, status: 'low', costPrice: 500, supplier: 'Deluxe Spirits Ltd', expiryDate: '2027-01-01', minStockAlert: 3, storageLocation: 'Beverage Store', lastRestocked: '2026-05-20' },
     { id: 'rm-35', name: 'Coffee Beans', category: 'beverages', existingStock: 4, unit: 'kg', openingStock: 6, closingStock: 4, currentStock: 4, status: 'good', costPrice: 800, supplier: 'Gourmet Imports', expiryDate: '2026-10-01', minStockAlert: 1, storageLocation: 'Dry Store A', lastRestocked: '2026-05-15' },
     { id: 'rm-36', name: 'Tea Powder', category: 'beverages', existingStock: 3, unit: 'kg', openingStock: 4, closingStock: 3, currentStock: 3, status: 'good', costPrice: 250, supplier: 'Grains & Spices Wholesale', expiryDate: '2026-11-01', minStockAlert: 1, storageLocation: 'Dry Store A', lastRestocked: '2026-05-15' },
     { id: 'rm-37', name: 'Juice Bottles', category: 'beverages', existingStock: 24, unit: 'Pcs', openingStock: 48, closingStock: 24, currentStock: 24, status: 'good', costPrice: 60, supplier: 'Deluxe Spirits Ltd', expiryDate: '2026-09-01', minStockAlert: 12, storageLocation: 'Beverage Store', lastRestocked: '2026-05-22' },
-    // ── PACKAGING ──
     { id: 'rm-38', name: 'Paper Bags', category: 'packaging', existingStock: 200, unit: 'Pcs', openingStock: 500, closingStock: 200, currentStock: 200, status: 'good', costPrice: 3, supplier: 'PackRight Solutions', expiryDate: '', minStockAlert: 100, storageLocation: 'Supply Room', lastRestocked: '2026-05-10' },
     { id: 'rm-39', name: 'Plastic Containers', category: 'packaging', existingStock: 50, unit: 'Pcs', openingStock: 300, closingStock: 50, currentStock: 50, status: 'low', costPrice: 5, supplier: 'PackRight Solutions', expiryDate: '', minStockAlert: 100, storageLocation: 'Supply Room', lastRestocked: '2026-05-05' },
     { id: 'rm-40', name: 'Pizza Boxes', category: 'packaging', existingStock: 80, unit: 'Pcs', openingStock: 200, closingStock: 80, currentStock: 80, status: 'good', costPrice: 12, supplier: 'PackRight Solutions', expiryDate: '', minStockAlert: 50, storageLocation: 'Supply Room', lastRestocked: '2026-05-12' },
     { id: 'rm-41', name: 'Tissue Papers (Pack)', category: 'packaging', existingStock: 30, unit: 'Pcs', openingStock: 50, closingStock: 30, currentStock: 30, status: 'good', costPrice: 25, supplier: 'PackRight Solutions', expiryDate: '', minStockAlert: 10, storageLocation: 'Supply Room', lastRestocked: '2026-05-15' },
-    // ── FROZEN ──
     { id: 'rm-42', name: 'Frozen Fries', category: 'frozen', existingStock: 25, unit: 'kg', openingStock: 40, closingStock: 25, currentStock: 25, status: 'good', costPrice: 120, supplier: 'FrostyFoods Ltd', expiryDate: '2026-12-01', minStockAlert: 8, storageLocation: 'Freezer B', lastRestocked: '2026-05-20' },
     { id: 'rm-43', name: 'Frozen Nuggets', category: 'frozen', existingStock: 8, unit: 'kg', openingStock: 15, closingStock: 8, currentStock: 8, status: 'good', costPrice: 280, supplier: 'FrostyFoods Ltd', expiryDate: '2026-11-01', minStockAlert: 3, storageLocation: 'Freezer B', lastRestocked: '2026-05-20' },
     { id: 'rm-44', name: 'Ice Cream Stock', category: 'frozen', existingStock: 2, unit: 'kg', openingStock: 8, closingStock: 2, currentStock: 2, status: 'low', costPrice: 400, supplier: 'FrostyFoods Ltd', expiryDate: '2026-10-01', minStockAlert: 3, storageLocation: 'Freezer B', lastRestocked: '2026-05-15' },
-    // ── BAKERY ──
     { id: 'rm-45', name: 'Chocolate Syrup', category: 'bakery', existingStock: 4, unit: 'Ltr.', openingStock: 6, closingStock: 4, currentStock: 4, status: 'good', costPrice: 350, supplier: 'Gourmet Imports', expiryDate: '2026-12-01', minStockAlert: 1, storageLocation: 'Dry Store A', lastRestocked: '2026-05-12' },
     { id: 'rm-46', name: 'Cocoa Powder', category: 'bakery', existingStock: 1.5, unit: 'kg', openingStock: 3, closingStock: 1.5, currentStock: 1.5, status: 'good', costPrice: 400, supplier: 'Gourmet Imports', expiryDate: '2027-01-01', minStockAlert: 0.5, storageLocation: 'Dry Store A', lastRestocked: '2026-05-12' },
     { id: 'rm-47', name: 'Yeast', category: 'bakery', existingStock: 0.3, unit: 'kg', openingStock: 1, closingStock: 0.3, currentStock: 0.3, status: 'low', costPrice: 500, supplier: 'Grains & Spices Wholesale', expiryDate: '2026-08-01', minStockAlert: 0.3, storageLocation: 'Fridge A', lastRestocked: '2026-05-08' },
-    // ── CLEANING ──
     { id: 'rm-48', name: 'Dishwash Liquid', category: 'cleaning', existingStock: 6, unit: 'Ltr.', openingStock: 10, closingStock: 6, currentStock: 6, status: 'good', costPrice: 120, supplier: 'CleanPro Supplies', expiryDate: '2027-06-01', minStockAlert: 2, storageLocation: 'Utility Room', lastRestocked: '2026-05-10' },
     { id: 'rm-49', name: 'Sanitizer (500ml)', category: 'cleaning', existingStock: 4, unit: 'Pcs', openingStock: 10, closingStock: 4, currentStock: 4, status: 'good', costPrice: 180, supplier: 'CleanPro Supplies', expiryDate: '2027-01-01', minStockAlert: 2, storageLocation: 'Utility Room', lastRestocked: '2026-05-10' },
     { id: 'rm-50', name: 'Garbage Bags (Roll)', category: 'cleaning', existingStock: 2, unit: 'Pcs', openingStock: 8, closingStock: 2, currentStock: 2, status: 'low', costPrice: 60, supplier: 'CleanPro Supplies', expiryDate: '', minStockAlert: 3, storageLocation: 'Utility Room', lastRestocked: '2026-05-05' },
-    // ── BAR ──
     { id: 'rm-51', name: '100 Pipers (Scotch)', category: 'bar', existingStock: 52, unit: 'Btls', openingStock: 60, closingStock: 52, currentStock: 52, status: 'good', costPrice: 1500, supplier: 'Deluxe Spirits Ltd', expiryDate: '', minStockAlert: 12, storageLocation: 'Bar Cabinet', lastRestocked: '2026-05-22' },
-      { id: 'rm-52', name: 'Mocktail Syrups', category: 'bar', existingStock: 8, unit: 'Btls', openingStock: 12, closingStock: 8, currentStock: 8, status: 'good', costPrice: 350, supplier: 'Gourmet Imports', expiryDate: '2027-01-01', minStockAlert: 3, storageLocation: 'Bar Cabinet', lastRestocked: '2026-05-15' },
-      { id: 'rm-53', name: 'Soda Water', category: 'bar', existingStock: 24, unit: 'Btls', openingStock: 48, closingStock: 24, currentStock: 24, status: 'good', costPrice: 30, supplier: 'Deluxe Spirits Ltd', expiryDate: '2026-12-01', minStockAlert: 12, storageLocation: 'Bar Cabinet', lastRestocked: '2026-05-22' },
-    ];
-    return mockItems.map(item => ({
-      ...item,
-      batches: item.batches || (item.expiryDate ? [{ id: `${item.id}-b1`, quantity: item.currentStock, expiryDate: item.expiryDate, mfgDate: item.mfgDate, costPrice: item.costPrice }] : [])
-    }));
-  });
+    { id: 'rm-52', name: 'Mocktail Syrups', category: 'bar', existingStock: 8, unit: 'Btls', openingStock: 12, closingStock: 8, currentStock: 8, status: 'good', costPrice: 350, supplier: 'Gourmet Imports', expiryDate: '2027-01-01', minStockAlert: 3, storageLocation: 'Bar Cabinet', lastRestocked: '2026-05-15' },
+    { id: 'rm-53', name: 'Soda Water', category: 'bar', existingStock: 24, unit: 'Btls', openingStock: 48, closingStock: 24, currentStock: 24, status: 'good', costPrice: 30, supplier: 'Deluxe Spirits Ltd', expiryDate: '2026-12-01', minStockAlert: 12, storageLocation: 'Bar Cabinet', lastRestocked: '2026-05-22' },
+  ];
+  return mockItems.map(item => ({
+    ...item,
+    batches: item.batches || (item.expiryDate ? [{ id: `${item.id}-b1`, quantity: item.currentStock, expiryDate: item.expiryDate, mfgDate: item.mfgDate, costPrice: item.costPrice }] : [])
+  }));
+};
 
-  const [salesData, setSalesData] = useState<SalesInventoryItem[]>(() => {
-    if (typeof window !== 'undefined') {
-      const isFresh = localStorage.getItem('qrestro_demo_fresh_signup') === 'true';
-      const stored = localStorage.getItem('qrestro_sales_data');
-      if (stored) return JSON.parse(stored);
-      if (isFresh) return [];
-    }
-    return [
-      { id: 's-1', menuProduct: 'French Fries (Large)', quantitySold: 42, estimatedRawMaterialUsed: '8.4 kg Potato', date: '2026-05-26' },
-      { id: 's-2', menuProduct: 'Aloo Tikki Burger', quantitySold: 28, estimatedRawMaterialUsed: '28 Dish Aloo Tikki', date: '2026-05-26' },
-      { id: 's-3', menuProduct: 'Paneer Butter Masala', quantitySold: 18, estimatedRawMaterialUsed: '4.5 kg Paneer, 1.8 Ltr. Amul Cream', date: '2026-05-26' },
-      { id: 's-4', menuProduct: 'Butter Chicken (Half)', quantitySold: 22, estimatedRawMaterialUsed: '2.2 Ltr. Amul Cream', date: '2026-05-25' },
-      { id: 's-5', menuProduct: 'Butter Naan', quantitySold: 120, estimatedRawMaterialUsed: '12 kg Aata', date: '2026-05-25' },
-    ];
-  });
+const getMockSales = (): SalesInventoryItem[] => [
+  { id: 's-1', menuProduct: 'French Fries (Large)', quantitySold: 42, estimatedRawMaterialUsed: '8.4 kg Potato', date: '2026-05-26' },
+  { id: 's-2', menuProduct: 'Aloo Tikki Burger', quantitySold: 28, estimatedRawMaterialUsed: '28 Dish Aloo Tikki', date: '2026-05-26' },
+  { id: 's-3', menuProduct: 'Paneer Butter Masala', quantitySold: 18, estimatedRawMaterialUsed: '4.5 kg Paneer, 1.8 Ltr. Amul Cream', date: '2026-05-26' },
+  { id: 's-4', menuProduct: 'Butter Chicken (Half)', quantitySold: 22, estimatedRawMaterialUsed: '2.2 Ltr. Amul Cream', date: '2026-05-25' },
+  { id: 's-5', menuProduct: 'Butter Naan', quantitySold: 120, estimatedRawMaterialUsed: '12 kg Aata', date: '2026-05-25' },
+];
 
-  const [wastageData, setWastageData] = useState<WastageItem[]>(() => {
-    if (typeof window !== 'undefined') {
-      const isFresh = localStorage.getItem('qrestro_demo_fresh_signup') === 'true';
-      const stored = localStorage.getItem('qrestro_wastage_data');
-      if (stored) return JSON.parse(stored);
-      if (isFresh) return [];
-    }
-    return [
-      { id: 'w-1', name: 'Tomatoes', date: '2026-05-25', quantity: 2.5, unit: 'kg', reason: 'Spoilage', cost: 120 },
-      { id: 'w-2', name: 'Amul Cream', date: '2026-05-24', quantity: 1, unit: 'Ltr.', reason: 'Expired', cost: 180 },
-      { id: 'w-3', name: 'Aloo Tikki', date: '2026-05-23', quantity: 5, unit: 'Dish', reason: 'Spillage', cost: 150 },
-    ];
-  });
+const getMockWastage = (): WastageItem[] => [
+  { id: 'w-1', name: 'Tomatoes', date: '2026-05-25', quantity: 2.5, unit: 'kg', reason: 'Spoilage', cost: 120 },
+  { id: 'w-2', name: 'Amul Cream', date: '2026-05-24', quantity: 1, unit: 'Ltr.', reason: 'Expired', cost: 180 },
+  { id: 'w-3', name: 'Aloo Tikki', date: '2026-05-23', quantity: 5, unit: 'Dish', reason: 'Spillage', cost: 150 },
+];
 
-  const [purchaseOrders, setPurchaseOrders] = useState<PurchaseOrder[]>(() => {
-    if (typeof window !== 'undefined') {
-      const isFresh = localStorage.getItem('qrestro_demo_fresh_signup') === 'true';
-      const stored = localStorage.getItem('qrestro_purchase_orders');
-      if (stored) return JSON.parse(stored);
-      if (isFresh) return [];
+const getMockPOs = (): PurchaseOrder[] => [
+  { id: 'po-1', itemName: 'Potato', quantity: 100, unit: 'kg', orderDate: '2026-05-26', supplier: 'Fresh Veggies Corp', status: 'pending', totalCost: 0, notes: 'Urgent refill for high demand weekend.' },
+  { id: 'po-2', itemName: '100 Pipers', quantity: 24, unit: 'Btls', orderDate: '2026-05-24', supplier: 'Deluxe Spirits Ltd', status: 'draft', totalCost: 0, notes: 'Procuring premium stock for the bar section.' },
+  { id: 'po-3', itemName: 'Amul Cream', quantity: 50, unit: 'Ltr.', orderDate: '2026-05-22', supplier: 'Dairyland Foods', status: 'completed', totalCost: 7500, deliveredQty: 50, purchasePrice: 7500, batchNo: 'BAT-003', mfgDate: '2026-05-21', expiryDate: '2026-06-05', notes: 'Need high fat fresh cream for curries.' },
+  { id: 'po-4', itemName: 'Tomatoes', quantity: 50, unit: 'kg', orderDate: '2026-05-25', supplier: 'Fresh Veggies Corp', status: 'pending', totalCost: 0, notes: 'Fresh local farm tomatoes preferred.' },
+];
+
+const getMockSuppliers = (): SupplierContact[] => [
+  { name: "Fresh Farm Pvt Ltd", mobile: "+91 98765 43210", email: "orders@freshfarm.com" },
+  { name: "Fresh Veggies Corp", mobile: "+91 87654 32109", email: "sales@freshveggies.com" },
+  { name: "Deluxe Spirits Ltd", mobile: "+91 76543 21098" },
+  { name: "Dairyland Foods", email: "delivery@dairyland.com" },
+  { name: "Grains & Spices Wholesale" },
+  { name: "Prime Meats Ltd" },
+  { name: "Ocean Fresh Seafood" },
+  { name: "Gourmet Imports" },
+  { name: "PackRight Solutions" },
+  { name: "FrostyFoods Ltd" },
+  { name: "CleanPro Supplies" }
+];
+
+const getMockStorage = (): string[] => [
+  'Dry Store A',
+  'Dry Store B',
+  'Fridge A',
+  'Fridge B',
+  'Freezer A',
+  'Freezer B',
+  'Beverage Store',
+  'Bar Cabinet',
+  'Supply Room',
+  'Utility Room',
+  'Spice Rack'
+];
+
+function InventoryPageContent() {
+  const [rawMaterials, setRawMaterials] = useState<RawMaterial[]>([]);
+  const [salesData, setSalesData] = useState<SalesInventoryItem[]>([]);
+  const [wastageData, setWastageData] = useState<WastageItem[]>([]);
+  const [purchaseOrders, setPurchaseOrders] = useState<PurchaseOrder[]>([]);
+  const [suppliers, setSuppliers] = useState<SupplierContact[]>([]);
+  const [storageSections, setStorageSections] = useState<string[]>([]);
+  const [isInventoryLoaded, setIsInventoryLoaded] = useState(false);
+
+  useEffect(() => {
+    const fresh = localStorage.getItem('qrestro_demo_fresh_signup') === 'true';
+
+    // 1. rawMaterials
+    const storedRM = localStorage.getItem('qrestro_raw_materials');
+    if (storedRM) {
+      try { setRawMaterials(JSON.parse(storedRM)); } catch { setRawMaterials(fresh ? [] : getMockMaterials()); }
+    } else {
+      setRawMaterials(fresh ? [] : getMockMaterials());
     }
-    return [
-      { id: 'po-1', itemName: 'Potato', quantity: 100, unit: 'kg', orderDate: '2026-05-26', supplier: 'Fresh Veggies Corp', status: 'pending', totalCost: 0, notes: 'Urgent refill for high demand weekend.' },
-      { id: 'po-2', itemName: '100 Pipers', quantity: 24, unit: 'Btls', orderDate: '2026-05-24', supplier: 'Deluxe Spirits Ltd', status: 'draft', totalCost: 0, notes: 'Procuring premium stock for the bar section.' },
-      { id: 'po-3', itemName: 'Amul Cream', quantity: 50, unit: 'Ltr.', orderDate: '2026-05-22', supplier: 'Dairyland Foods', status: 'completed', totalCost: 7500, deliveredQty: 50, purchasePrice: 7500, batchNo: 'BAT-003', mfgDate: '2026-05-21', expiryDate: '2026-06-05', notes: 'Need high fat fresh cream for curries.' },
-      { id: 'po-4', itemName: 'Tomatoes', quantity: 50, unit: 'kg', orderDate: '2026-05-25', supplier: 'Fresh Veggies Corp', status: 'pending', totalCost: 0, notes: 'Fresh local farm tomatoes preferred.' },
-    ];
-  });
+
+    // 2. salesData
+    const storedSales = localStorage.getItem('qrestro_sales_data');
+    if (storedSales) {
+      try { setSalesData(JSON.parse(storedSales)); } catch { setSalesData(fresh ? [] : getMockSales()); }
+    } else {
+      setSalesData(fresh ? [] : getMockSales());
+    }
+
+    // 3. wastageData
+    const storedWastage = localStorage.getItem('qrestro_wastage_data');
+    if (storedWastage) {
+      try { setWastageData(JSON.parse(storedWastage)); } catch { setWastageData(fresh ? [] : getMockWastage()); }
+    } else {
+      setWastageData(fresh ? [] : getMockWastage());
+    }
+
+    // 4. purchaseOrders
+    const storedPOs = localStorage.getItem('qrestro_purchase_orders');
+    if (storedPOs) {
+      try { setPurchaseOrders(JSON.parse(storedPOs)); } catch { setPurchaseOrders(fresh ? [] : getMockPOs()); }
+    } else {
+      setPurchaseOrders(fresh ? [] : getMockPOs());
+    }
+
+    // 5. suppliers
+    const storedSuppliers = localStorage.getItem('qrestro_suppliers');
+    if (storedSuppliers) {
+      try { setSuppliers(JSON.parse(storedSuppliers)); } catch { setSuppliers(getMockSuppliers()); }
+    } else {
+      setSuppliers(getMockSuppliers());
+    }
+
+    // 6. storageSections
+    const storedStorage = localStorage.getItem('qrestro_storage_sections');
+    if (storedStorage) {
+      try { setStorageSections(JSON.parse(storedStorage)); } catch { setStorageSections(getMockStorage()); }
+    } else {
+      setStorageSections(getMockStorage());
+    }
+
+    setIsInventoryLoaded(true);
+  }, []);
 
   const searchParams = useSearchParams();
   const tabParam = searchParams.get('tab');
@@ -304,50 +351,7 @@ function InventoryPageContent() {
   const [isAddCustomUnit, setIsAddCustomUnit] = useState(false);
   const [isEditCustomUnit, setIsEditCustomUnit] = useState(false);
 
-  // Dynamic Suppliers List State
-  const [suppliers, setSuppliers] = useState<SupplierContact[]>(() => {
-    if (typeof window !== 'undefined') {
-      const stored = localStorage.getItem('qrestro_suppliers');
-      if (stored) return JSON.parse(stored);
-    }
-    return [
-      { name: "Fresh Farm Pvt Ltd", mobile: "+91 98765 43210", email: "orders@freshfarm.com" },
-      { name: "Fresh Veggies Corp", mobile: "+91 87654 32109", email: "sales@freshveggies.com" },
-      { name: "Deluxe Spirits Ltd", mobile: "+91 76543 21098" },
-      { name: "Dairyland Foods", email: "delivery@dairyland.com" },
-      { name: "Grains & Spices Wholesale" },
-      { name: "Prime Meats Ltd" },
-      { name: "Ocean Fresh Seafood" },
-      { name: "Gourmet Imports" },
-      { name: "PackRight Solutions" },
-      { name: "FrostyFoods Ltd" },
-      { name: "CleanPro Supplies" }
-    ];
-  });
   const [editingSupplierName, setEditingSupplierName] = useState<string | null>(null);
-
-
-
-  // Dynamic Storage Sections List State
-  const [storageSections, setStorageSections] = useState<string[]>(() => {
-    if (typeof window !== 'undefined') {
-      const stored = localStorage.getItem('qrestro_storage_sections');
-      if (stored) return JSON.parse(stored);
-    }
-    return [
-      'Dry Store A',
-      'Dry Store B',
-      'Fridge A',
-      'Fridge B',
-      'Freezer A',
-      'Freezer B',
-      'Beverage Store',
-      'Bar Cabinet',
-      'Supply Room',
-      'Utility Room',
-      'Spice Rack'
-    ];
-  });
 
   // Supplier addition states per modal
   const [isAddingPoSupplier, setIsAddingPoSupplier] = useState(false);
@@ -451,32 +455,45 @@ function InventoryPageContent() {
 
   // Persist states in localStorage for sync across pages
   useEffect(() => {
-    localStorage.setItem('qrestro_raw_materials', JSON.stringify(rawMaterials));
-  }, [rawMaterials]);
+    if (isInventoryLoaded) {
+      localStorage.setItem('qrestro_raw_materials', JSON.stringify(rawMaterials));
+    }
+  }, [rawMaterials, isInventoryLoaded]);
 
   useEffect(() => {
-    localStorage.setItem('qrestro_sales_data', JSON.stringify(salesData));
-  }, [salesData]);
+    if (isInventoryLoaded) {
+      localStorage.setItem('qrestro_sales_data', JSON.stringify(salesData));
+    }
+  }, [salesData, isInventoryLoaded]);
 
   useEffect(() => {
-    localStorage.setItem('qrestro_wastage_data', JSON.stringify(wastageData));
-  }, [wastageData]);
+    if (isInventoryLoaded) {
+      localStorage.setItem('qrestro_wastage_data', JSON.stringify(wastageData));
+    }
+  }, [wastageData, isInventoryLoaded]);
 
   useEffect(() => {
-    localStorage.setItem('qrestro_purchase_orders', JSON.stringify(purchaseOrders));
-  }, [purchaseOrders]);
+    if (isInventoryLoaded) {
+      localStorage.setItem('qrestro_purchase_orders', JSON.stringify(purchaseOrders));
+    }
+  }, [purchaseOrders, isInventoryLoaded]);
 
   useEffect(() => {
-    localStorage.setItem('qrestro_suppliers', JSON.stringify(suppliers));
-  }, [suppliers]);
+    if (isInventoryLoaded) {
+      localStorage.setItem('qrestro_suppliers', JSON.stringify(suppliers));
+    }
+  }, [suppliers, isInventoryLoaded]);
 
   useEffect(() => {
-    localStorage.setItem('qrestro_storage_sections', JSON.stringify(storageSections));
-  }, [storageSections]);
+    if (isInventoryLoaded) {
+      localStorage.setItem('qrestro_storage_sections', JSON.stringify(storageSections));
+    }
+  }, [storageSections, isInventoryLoaded]);
 
   // 5. Select active item
   const selectedMaterial = useMemo(() => {
-    return rawMaterials.find(m => m.id === selectedMaterialId) || rawMaterials[4]; // Default to potato
+    if (rawMaterials.length === 0) return null;
+    return rawMaterials.find(m => m.id === selectedMaterialId) || rawMaterials[0] || null;
   }, [rawMaterials, selectedMaterialId]);
 
   // 6. Filter Raw Materials
@@ -1863,9 +1880,18 @@ function InventoryPageContent() {
 
           {/* RIGHT 1/3 COLUMN: Selected Item Card */}
           <div className="bg-white border border-[#E6E1DA] rounded-2xl shadow-sm p-4 relative">
-            
-            {/* Header label in card */}
-            <div className="flex items-center justify-between pb-3.5 border-b border-[#F0ECE6]">
+            {!selectedMaterial ? (
+              <div className="text-center py-16 flex flex-col justify-center items-center min-h-[400px]">
+                <Package className="w-12 h-12 text-[#8C8375] opacity-30 mb-3" />
+                <p className="text-xs font-bold text-[#2C261F]">No Material Selected</p>
+                <p className="text-[10px] text-[#8C8375] mt-1 max-w-[200px] leading-relaxed">
+                  Select an item from the inventory list to view its batch logs and tracking details.
+                </p>
+              </div>
+            ) : (
+              <>
+                {/* Header label in card */}
+                <div className="flex items-center justify-between pb-3.5 border-b border-[#F0ECE6]">
               <span className="text-xs uppercase tracking-wider font-extrabold text-[#8C8375] flex items-center gap-1.5">
                 <Sparkles className="w-3.5 h-3.5 text-[#B88A52]" />
                 Inventory | <span className="text-[#2C261F]">{selectedMaterial.name}</span>
@@ -2603,7 +2629,8 @@ function InventoryPageContent() {
               </div>
             </>
           )}
-
+              </>
+            )}
           </div>
 
         </div>

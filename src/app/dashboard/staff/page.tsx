@@ -382,27 +382,32 @@ const INITIAL_SHIFT_TYPES: ShiftType[] = [
 ];
 
 export default function StaffPage() {
-  const [staffList, setStaffList] = useState<StaffMember[]>(() => {
-    if (typeof window !== 'undefined') {
-      const isFresh = localStorage.getItem('qrestro_demo_fresh_signup') === 'true';
-      const stored = localStorage.getItem('qrestro_staff_list');
-      if (stored) {
-        try {
-          const parsed = JSON.parse(stored);
-          if (Array.isArray(parsed)) {
-            return parsed.map((s: any) => ({
-              ...s,
-              status: s.status || 'off_duty',
-              weeklyShifts: s.weeklyShifts || getDefaultWeeklyShifts(s.shift || 'morning', parseInt(s.id?.replace('emp-', '') || '1', 10))
-            }));
-          }
-        } catch (e) {}
+  const [staffList, setStaffList] = useState<StaffMember[]>([]);
+  const [isStaffLoaded, setIsStaffLoaded] = useState(false);
+
+  useEffect(() => {
+    const isFresh = localStorage.getItem('qrestro_demo_fresh_signup') === 'true';
+    const stored = localStorage.getItem('qrestro_staff_list');
+    if (stored) {
+      try {
+        const parsed = JSON.parse(stored);
+        if (Array.isArray(parsed)) {
+          setStaffList(parsed.map((s: any) => ({
+            ...s,
+            status: s.status || 'off_duty',
+            weeklyShifts: s.weeklyShifts || getDefaultWeeklyShifts(s.shift || 'morning', parseInt(s.id?.replace('emp-', '') || '1', 10))
+          })));
+        } else {
+          setStaffList(isFresh ? [] : INITIAL_STAFF);
+        }
+      } catch (e) {
+        setStaffList(isFresh ? [] : INITIAL_STAFF);
       }
-      if (isFresh) return [];
+    } else {
+      setStaffList(isFresh ? [] : INITIAL_STAFF);
     }
-    return INITIAL_STAFF;
-  });
-  const [isStaffLoaded, setIsStaffLoaded] = useState(true);
+    setIsStaffLoaded(true);
+  }, []);
 
   useEffect(() => {
     if (isStaffLoaded) {
@@ -897,7 +902,8 @@ export default function StaffPage() {
 
   // 5. Select active employee record
   const selectedStaff = useMemo(() => {
-    return staffList.find(s => s.id === selectedStaffId) || staffList[1]; // Fallback to Jenny
+    if (staffList.length === 0) return null;
+    return staffList.find(s => s.id === selectedStaffId) || staffList[0] || null;
   }, [staffList, selectedStaffId]);
 
   // 6. Filtering Staff Members
@@ -1448,145 +1454,153 @@ export default function StaffPage() {
 
         {/* RIGHT 1/3 COLUMN: Selected Staff Member Profile Details Card */}
         <div className="bg-white border border-[#E6E1DA] rounded-2xl shadow-sm p-4 overflow-hidden relative">
-          
-          {/* Header Profile Title */}
-          <div className="flex items-center justify-between pb-3.5 border-b border-[#F0ECE6]">
-            <span className="text-xs uppercase tracking-wider font-extrabold text-[#8C8375] flex items-center gap-1.5">
-              <Award className="w-4 h-4 text-[#B88A52]" />
-              Staff Profile | <span className="text-[#2C261F]">{selectedStaff.role}</span>
-            </span>
-            <span className={cn(
-              "px-2 py-0.5 rounded-md text-[9px] uppercase font-bold tracking-wider border",
-              (selectedStaff.status || 'off_duty') === 'clocked_in' && 'bg-emerald-50 text-emerald-600 border-emerald-100',
-              (selectedStaff.status || 'off_duty') === 'on_break' && 'bg-amber-50 text-amber-600 border-amber-100',
-              (selectedStaff.status || 'off_duty') === 'off_duty' && 'bg-slate-50 text-slate-600 border-slate-100',
-            )}>
-              {(selectedStaff.status || 'off_duty').replace('_', ' ')}
-            </span>
-          </div>
-
-          {/* Centralized Avatar & Name details */}
-          <div className="my-5 text-center bg-[#FBF9F5] border border-[#F0ECE6]/60 p-5 rounded-2xl relative">
-            <div className="relative inline-block">
-              {/* Profile Image Initials or Photo */}
-              {renderAvatarInitials(selectedStaff.name, selectedStaff.role, selectedStaff.profilePicture, "w-20 h-20 text-2xl font-black border-2 mx-auto")}
-              {/* Pulse status indicator */}
-              <span className={cn(
-                "absolute bottom-0.5 right-0.5 w-5 h-5 rounded-full border-2 border-white flex items-center justify-center",
-                (selectedStaff.status || 'off_duty') === 'clocked_in' && 'bg-emerald-500',
-                (selectedStaff.status || 'off_duty') === 'on_break' && 'bg-amber-500',
-                (selectedStaff.status || 'off_duty') === 'off_duty' && 'bg-slate-400',
-              )} />
+          {!selectedStaff ? (
+            <div className="text-center py-16 flex flex-col justify-center items-center min-h-[400px]">
+              <Users className="w-12 h-12 text-[#8C8375] opacity-30 mb-3" />
+              <p className="text-xs font-bold text-[#2C261F]">No Staff Selected</p>
+              <p className="text-[10px] text-[#8C8375] mt-1 max-w-[200px] leading-relaxed">
+                Add an employee to the roster or select one from the directory list to manage their shifts.
+              </p>
             </div>
+          ) : (
+            <>
+              {/* Header Profile Title */}
+              <div className="flex items-center justify-between pb-3.5 border-b border-[#F0ECE6]">
+                <span className="text-xs uppercase tracking-wider font-extrabold text-[#8C8375] flex items-center gap-1.5">
+                  <Award className="w-4 h-4 text-[#B88A52]" />
+                  Staff Profile | <span className="text-[#2C261F]">{selectedStaff.role}</span>
+                </span>
+                <span className={cn(
+                  "px-2 py-0.5 rounded-md text-[9px] uppercase font-bold tracking-wider border",
+                  (selectedStaff.status || 'off_duty') === 'clocked_in' && 'bg-emerald-50 text-emerald-600 border-emerald-100',
+                  (selectedStaff.status || 'off_duty') === 'on_break' && 'bg-amber-50 text-amber-600 border-amber-100',
+                  (selectedStaff.status || 'off_duty') === 'off_duty' && 'bg-slate-50 text-slate-600 border-slate-100',
+                )}>
+                  {(selectedStaff.status || 'off_duty').replace('_', ' ')}
+                </span>
+              </div>
 
-            <h3 className="font-heading font-bold text-base text-[#2C261F] mt-3 tracking-tight">{selectedStaff.name}</h3>
-            <div className="mt-1.5 flex items-center justify-center gap-2">
-              <span className="inline-flex px-2 py-0.5 bg-[#FAF4EB] border border-[#FAF0E2] text-[9px] font-extrabold text-[#B88A52] rounded-md uppercase tracking-wider">
-                ID: {selectedStaff.id}
-              </span>
-            </div>
-          </div>
+              {/* Centralized Avatar & Name details */}
+              <div className="my-5 text-center bg-[#FBF9F5] border border-[#F0ECE6]/60 p-5 rounded-2xl relative">
+                <div className="relative inline-block">
+                  {/* Profile Image Initials or Photo */}
+                  {renderAvatarInitials(selectedStaff.name, selectedStaff.role, selectedStaff.profilePicture, "w-20 h-20 text-2xl font-black border-2 mx-auto")}
+                  {/* Pulse status indicator */}
+                  <span className={cn(
+                    "absolute bottom-0.5 right-0.5 w-5 h-5 rounded-full border-2 border-white flex items-center justify-center",
+                    (selectedStaff.status || 'off_duty') === 'clocked_in' && 'bg-emerald-500',
+                    (selectedStaff.status || 'off_duty') === 'on_break' && 'bg-amber-500',
+                    (selectedStaff.status || 'off_duty') === 'off_duty' && 'bg-slate-400',
+                  )} />
+                </div>
 
-          {/* Staff contact & personal details */}
-          <div className="space-y-2 text-xs font-semibold text-[#8C8375] border-b border-[#F0ECE6] pb-4">
-            <div className="flex items-center gap-2.5 bg-[#FAF7F2] p-2.5 rounded-xl border border-[#FAF0E2]">
-              <Phone className="w-4 h-4 text-[#B88A52] flex-shrink-0" />
-              <a href={`tel:${selectedStaff.phone}`} className="text-[#5A5348] hover:underline font-bold">{selectedStaff.phone}</a>
-            </div>
-            
-            <div className="flex items-center gap-2.5 bg-[#FAF7F2] p-2.5 rounded-xl border border-[#FAF0E2] overflow-hidden">
-              <Mail className="w-4 h-4 text-[#B88A52] flex-shrink-0" />
-              <a href={`mailto:${selectedStaff.email}`} className="text-[#5A5348] hover:underline font-bold truncate">{selectedStaff.email}</a>
-            </div>
-
-            <div className="flex items-center gap-2.5 bg-[#FAF7F2] p-2.5 rounded-xl border border-[#FAF0E2]">
-              <ShieldCheck className="w-4 h-4 text-[#B88A52] flex-shrink-0" />
-              <span className="text-[#5A5348] font-bold">ID Proof: {selectedStaff.idProof}</span>
-            </div>
-
-            <div className="flex items-start gap-2.5 bg-[#FAF7F2] p-2.5 rounded-xl border border-[#FAF0E2]">
-              <MapPin className="w-4 h-4 text-[#B88A52] mt-0.5 flex-shrink-0" />
-              <span className="text-[#5A5348] font-bold text-left leading-normal">{selectedStaff.address}</span>
-            </div>
-
-            <div className="flex items-center gap-2.5 bg-[#FAF7F2] p-2.5 rounded-xl border border-[#FAF0E2]">
-              <Calendar className="w-4 h-4 text-[#B88A52] flex-shrink-0" />
-              <span className="text-[#5A5348] font-bold">
-                Joined: {new Date(selectedStaff.joinedDate).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
-              </span>
-            </div>
-          </div>
-
-
-
-          {/* Active Assignments Panel (e.g. Waiter tables, Chef ranges) */}
-          {['waiter', 'chef', 'manager'].includes(selectedStaff.role) && (
-            <div className="bg-[#FCFAF7] border border-[#E6E1DA] p-3 rounded-xl">
-              {selectedStaff.role === 'waiter' ? (
-                <div>
-                  <span className="text-[10px] uppercase font-extrabold text-[#8C8375] tracking-wider flex items-center gap-1.5 mb-2">
-                    <Compass className="w-3.5 h-3.5 text-[#B88A52]" />
-                    Assigned Tables Floor
+                <h3 className="font-heading font-bold text-base text-[#2C261F] mt-3 tracking-tight">{selectedStaff.name}</h3>
+                <div className="mt-1.5 flex items-center justify-center gap-2">
+                  <span className="inline-flex px-2 py-0.5 bg-[#FAF4EB] border border-[#FAF0E2] text-[9px] font-extrabold text-[#B88A52] rounded-md uppercase tracking-wider">
+                    ID: {selectedStaff.id}
                   </span>
-                  
-                  {selectedStaff.assignedTables && selectedStaff.assignedTables.length > 0 ? (
-                    <div className="flex flex-wrap gap-1.5">
-                      {selectedStaff.assignedTables.map((table, idx) => (
-                        <span 
-                          key={idx}
-                          className="px-2.5 py-1 bg-emerald-50 border border-emerald-200 text-emerald-700 text-[10px] font-bold rounded-lg uppercase"
-                        >
-                          🍽️ {table}
-                        </span>
-                      ))}
+                </div>
+              </div>
+
+              {/* Staff contact & personal details */}
+              <div className="space-y-2 text-xs font-semibold text-[#8C8375] border-b border-[#F0ECE6] pb-4">
+                <div className="flex items-center gap-2.5 bg-[#FAF7F2] p-2.5 rounded-xl border border-[#FAF0E2]">
+                  <Phone className="w-4 h-4 text-[#B88A52] flex-shrink-0" />
+                  <a href={`tel:${selectedStaff.phone}`} className="text-[#5A5348] hover:underline font-bold">{selectedStaff.phone}</a>
+                </div>
+                
+                <div className="flex items-center gap-2.5 bg-[#FAF7F2] p-2.5 rounded-xl border border-[#FAF0E2] overflow-hidden">
+                  <Mail className="w-4 h-4 text-[#B88A52] flex-shrink-0" />
+                  <a href={`mailto:${selectedStaff.email}`} className="text-[#5A5348] hover:underline font-bold truncate">{selectedStaff.email}</a>
+                </div>
+
+                <div className="flex items-center gap-2.5 bg-[#FAF7F2] p-2.5 rounded-xl border border-[#FAF0E2]">
+                  <ShieldCheck className="w-4 h-4 text-[#B88A52] flex-shrink-0" />
+                  <span className="text-[#5A5348] font-bold">ID Proof: {selectedStaff.idProof}</span>
+                </div>
+
+                <div className="flex items-start gap-2.5 bg-[#FAF7F2] p-2.5 rounded-xl border border-[#FAF0E2]">
+                  <MapPin className="w-4 h-4 text-[#B88A52] mt-0.5 flex-shrink-0" />
+                  <span className="text-[#5A5348] font-bold text-left leading-normal">{selectedStaff.address}</span>
+                </div>
+
+                <div className="flex items-center gap-2.5 bg-[#FAF7F2] p-2.5 rounded-xl border border-[#FAF0E2]">
+                  <Calendar className="w-4 h-4 text-[#B88A52] flex-shrink-0" />
+                  <span className="text-[#5A5348] font-bold">
+                    Joined: {new Date(selectedStaff.joinedDate).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
+                  </span>
+                </div>
+              </div>
+
+              {/* Active Assignments Panel (e.g. Waiter tables, Chef ranges) */}
+              {['waiter', 'chef', 'manager'].includes(selectedStaff.role) && (
+                <div className="bg-[#FCFAF7] border border-[#E6E1DA] p-3 rounded-xl mt-4">
+                  {selectedStaff.role === 'waiter' ? (
+                    <div>
+                      <span className="text-[10px] uppercase font-extrabold text-[#8C8375] tracking-wider flex items-center gap-1.5 mb-2">
+                        <Compass className="w-3.5 h-3.5 text-[#B88A52]" />
+                        Assigned Tables Floor
+                      </span>
+                      
+                      {selectedStaff.assignedTables && selectedStaff.assignedTables.length > 0 ? (
+                        <div className="flex flex-wrap gap-1.5">
+                          {selectedStaff.assignedTables.map((table, idx) => (
+                            <span 
+                              key={idx}
+                              className="px-2.5 py-1 bg-emerald-50 border border-emerald-200 text-emerald-700 text-[10px] font-bold rounded-lg uppercase"
+                            >
+                              🍽️ {table}
+                            </span>
+                          ))}
+                        </div>
+                      ) : (
+                        <p className="text-[10px] text-rose-600 font-semibold flex items-center gap-1">
+                          <ShieldAlert className="w-3.5 h-3.5" />
+                          No tables assigned. Employee is unallocated!
+                        </p>
+                      )}
                     </div>
                   ) : (
-                    <p className="text-[10px] text-rose-600 font-semibold flex items-center gap-1">
-                      <ShieldAlert className="w-3.5 h-3.5" />
-                      No tables assigned. Employee is unallocated!
-                    </p>
+                    <div>
+                      <span className="text-[10px] uppercase font-extrabold text-[#8C8375] tracking-wider flex items-center gap-1.5 mb-1.5">
+                        <Clipboard className="w-3.5 h-3.5 text-[#B88A52]" />
+                        Active Kitchen Section
+                      </span>
+                      <p className="text-xs font-bold text-[#2C261F] flex items-center gap-1.5">
+                        <span className="w-1.5 h-1.5 rounded-full bg-[#B88A52]" />
+                        {selectedStaff.assignedSection || 'General Operations'}
+                      </p>
+                    </div>
                   )}
                 </div>
-              ) : (
-                <div>
-                  <span className="text-[10px] uppercase font-extrabold text-[#8C8375] tracking-wider flex items-center gap-1.5 mb-1.5">
-                    <Clipboard className="w-3.5 h-3.5 text-[#B88A52]" />
-                    Active Kitchen Section
-                  </span>
-                  <p className="text-xs font-bold text-[#2C261F] flex items-center gap-1.5">
-                    <span className="w-1.5 h-1.5 rounded-full bg-[#B88A52]" />
-                    {selectedStaff.assignedSection || 'General Operations'}
-                  </p>
-                </div>
               )}
-            </div>
+
+              {/* Quick Staff Controls Panel */}
+              <div className="mt-5 space-y-2">
+                <button 
+                  onClick={() => openEditModal(selectedStaff)}
+                  className="w-full py-2.5 bg-[#B88A52] hover:bg-[#C99E65] text-white text-[10px] font-extrabold uppercase tracking-wider rounded-xl transition-all shadow-xs cursor-pointer text-center flex items-center justify-center gap-1.5"
+                >
+                  <Edit2 className="w-3.5 h-3.5" />
+                  <span>Edit Staff Profile</span>
+                </button>
+
+                <button 
+                  onClick={() => {
+                    setAssignForm({
+                      staffId: selectedStaff.id,
+                      assignedTables: selectedStaff.assignedTables || [],
+                      assignedSection: selectedStaff.assignedSection || ''
+                    });
+                    setIsAssignOpen(true);
+                  }}
+                  className="w-full py-2.5 border border-[#E6E1DA] hover:bg-[#FAF7F2] hover:border-[#B88A52]/40 text-[#5A5348] text-[10px] font-extrabold uppercase tracking-wider rounded-xl transition-all cursor-pointer text-center"
+                >
+                  Assign Workstations
+                </button>
+              </div>
+            </>
           )}
-
-          {/* Quick Staff Controls Panel */}
-          <div className="mt-5 space-y-2">
-            <button 
-              onClick={() => openEditModal(selectedStaff)}
-              className="w-full py-2.5 bg-[#B88A52] hover:bg-[#C99E65] text-white text-[10px] font-extrabold uppercase tracking-wider rounded-xl transition-all shadow-xs cursor-pointer text-center flex items-center justify-center gap-1.5"
-            >
-              <Edit2 className="w-3.5 h-3.5" />
-              <span>Edit Staff Profile</span>
-            </button>
-
-            <button 
-              onClick={() => {
-                setAssignForm({
-                  staffId: selectedStaff.id,
-                  assignedTables: selectedStaff.assignedTables || [],
-                  assignedSection: selectedStaff.assignedSection || ''
-                });
-                setIsAssignOpen(true);
-              }}
-              className="w-full py-2.5 border border-[#E6E1DA] hover:bg-[#FAF7F2] hover:border-[#B88A52]/40 text-[#5A5348] text-[10px] font-extrabold uppercase tracking-wider rounded-xl transition-all cursor-pointer text-center"
-            >
-              Assign Workstations
-            </button>
-          </div>
-
         </div>
 
       </div>

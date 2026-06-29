@@ -24,7 +24,8 @@ function DashboardOverviewContent() {
 
   useEffect(() => {
     setMounted(true);
-    setIsFresh(localStorage.getItem('qrestro_demo_fresh_signup') === 'true');
+    const fresh = localStorage.getItem('qrestro_demo_fresh_signup') === 'true';
+    setIsFresh(fresh);
     
     // Load orders
     setOrders(loadDemoOrders());
@@ -34,7 +35,7 @@ function DashboardOverviewContent() {
     if (savedReviews) {
       setReviews(JSON.parse(savedReviews));
     } else {
-      setReviews(demoReviews);
+      setReviews(fresh ? [] : demoReviews);
     }
 
     // Load tables
