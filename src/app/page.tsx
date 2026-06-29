@@ -540,6 +540,16 @@ export default function HomePage() {
   const [portalEntered, setPortalEntered] = useState(false);
   const [showPortalIntro, setShowPortalIntro] = useState(true);
 
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const entered = sessionStorage.getItem('qrestro_portal_entered') === 'true';
+      if (entered) {
+        setPortalEntered(true);
+        setShowPortalIntro(false);
+      }
+    }
+  }, []);
+
   const [aboutOpen, setAboutOpen] = useState(false);
   const [changelogOpen, setChangelogOpen] = useState(false);
   const [privacyOpen, setPrivacyOpen] = useState(false);
@@ -607,6 +617,9 @@ export default function HomePage() {
         <PortalIntroSequence 
           onEnter={() => {
             setPortalEntered(true);
+            if (typeof window !== 'undefined') {
+              sessionStorage.setItem('qrestro_portal_entered', 'true');
+            }
             setTimeout(() => {
               setShowPortalIntro(false);
             }, 1000);
