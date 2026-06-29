@@ -17,8 +17,20 @@ export default function CustomerMenuPage() {
   const [restaurantName, setRestaurantName] = useState('The Golden Plate');
   const [isSuspended, setIsSuspended] = useState(false);
   const [isLoaded, setIsLoaded] = useState(false);
-  // Categories start empty to avoid SSR/hydration mismatch; loaded client-side in useEffect
   const [categories, setCategories] = useState<MenuCategoryWithItems[]>([]);
+  const [activeCategory, setActiveCategory] = useState('');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [showCartDrawer, setShowCartDrawer] = useState(false);
+  const [selectedItem, setSelectedItem] = useState<MenuItem | null>(null);
+  const [showInstructionsModal, setShowInstructionsModal] = useState(false);
+  const [specialInstructions, setSpecialInstructions] = useState('');
+
+  // Sync activeCategory when categories load
+  useEffect(() => {
+    if (categories.length > 0 && !activeCategory) {
+      setActiveCategory(categories[0].id);
+    }
+  }, [categories, activeCategory]);
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -52,6 +64,13 @@ export default function CustomerMenuPage() {
         })
         .catch((err) => {
           console.warn('Could not load custom menu from database, falling back to local demo:', err);
+          if (params.restaurantSlug === 'the-golden-plate') {
+            setRestaurantLogo('default');
+            setRestaurantName('The Golden Plate');
+            setCategories(getDemoMenuWithCategories(true));
+            setIsLoaded(true);
+            return;
+          }
           // Fallback to local demo storage
           try {
             const saved = localStorage.getItem('qrestro_demo_restaurant');
@@ -157,18 +176,7 @@ export default function CustomerMenuPage() {
     );
   };
 
-  const [activeCategory, setActiveCategory] = useState('');
-  // Sync activeCategory when categories load
-  useEffect(() => {
-    if (categories.length > 0 && !activeCategory) {
-      setActiveCategory(categories[0].id);
-    }
-  }, [categories, activeCategory]);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [showCartDrawer, setShowCartDrawer] = useState(false);
-  const [selectedItem, setSelectedItem] = useState<MenuItem | null>(null);
-  const [showInstructionsModal, setShowInstructionsModal] = useState(false);
-  const [specialInstructions, setSpecialInstructions] = useState('');
+
 
   const filteredCategories = searchQuery
     ? categories.map(cat => ({

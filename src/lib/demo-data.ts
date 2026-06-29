@@ -168,11 +168,11 @@ export const demoReviews: Review[] = [
   { id: 'rev-3', session_id: null, restaurant_id: RESTAURANT_ID, rating: 5, comment: 'Best paneer tikka in the city! Will definitely come back.', customer_name: 'Raj M.', customer_phone: '+91 77880 99112', created_at: new Date(now.getTime() - 3600000).toISOString() },
 ];
 
-export function getDemoMenuWithCategories(): MenuCategoryWithItems[] {
+export function getDemoMenuWithCategories(forceStatic = false): MenuCategoryWithItems[] {
   // For the customer-facing menu page we always need items.
   // If the live arrays were cleared (fresh-signup branch), try localStorage first
   // then fall back to the original static defaults so the menu is never blank.
-  if (typeof window !== 'undefined') {
+  if (typeof window !== 'undefined' && !forceStatic) {
     try {
       const savedCats = localStorage.getItem('qrestro_demo_categories');
       const savedItems = localStorage.getItem('qrestro_demo_items');
@@ -190,8 +190,8 @@ export function getDemoMenuWithCategories(): MenuCategoryWithItems[] {
     }
   }
   // SSR / fallback: use static defaults
-  const cats = demoCategories.length > 0 ? demoCategories : _staticCategories;
-  const items = demoMenuItems.length > 0 ? demoMenuItems : _staticMenuItems;
+  const cats = _staticCategories;
+  const items = _staticMenuItems;
   return cats
     .filter(cat => cat.is_active)
     .sort((a, b) => a.sort_order - b.sort_order)
@@ -222,7 +222,7 @@ export function loadDemoOrders(): (Order & { order_items: OrderItem[] })[] {
   const saved = localStorage.getItem('qrestro_demo_orders');
   if (isFresh) return saved ? JSON.parse(saved) : [];
   
-  let orders = saved ? JSON.parse(saved) : getDemoOrdersWithItems();
+  const orders = saved ? JSON.parse(saved) : getDemoOrdersWithItems();
   
   const currentDate = new Date();
   const todayStr = getLocalDateString(currentDate);
