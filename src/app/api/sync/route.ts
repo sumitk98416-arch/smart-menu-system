@@ -25,8 +25,34 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Slug is required' }, { status: 400 });
     }
 
-    // 1. Get or Upsert Restaurant
-    let { data: existingRestaurant } = await supabaseAdmin
+    // 1. Resolve Owner ID dynamically to avoid foreign key violation
+    let ownerId = '00000000-0000-0000-0000-000000000000';
+    try {
+      const { createClient: createServerClient } = await import('@/lib/supabase/server');
+      const supabase = await createServerClient();
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        ownerId = user.id;
+      } else {
+        const { data: { users } } = await supabaseAdmin.auth.admin.listUsers({ perPage: 1 });
+        if (users && users.length > 0) {
+          ownerId = users[0].id;
+        }
+      }
+    } catch (e) {
+      console.error('Error determining owner ID:', e);
+      try {
+        const { data: { users } } = await supabaseAdmin.auth.admin.listUsers({ perPage: 1 });
+        if (users && users.length > 0) {
+          ownerId = users[0].id;
+        }
+      } catch (err) {
+        console.error('Fallback listUsers failed:', err);
+      }
+    }
+
+    // 2. Get or Upsert Restaurant
+    const { data: existingRestaurant } = await supabaseAdmin
       .from('restaurants')
       .select('id')
       .eq('slug', slug)
@@ -50,11 +76,10 @@ export async function POST(request: NextRequest) {
         })
         .eq('id', restaurantId);
     } else {
-      // Find default owner from auth users, or use placeholder uuid
       const { data: inserted } = await supabaseAdmin
         .from('restaurants')
         .insert({
-          owner_id: '00000000-0000-0000-0000-000000000000', // fallback uuid
+          owner_id: ownerId,
           name: restaurant.name || 'The Golden Plate',
           slug: slug,
           description: restaurant.description || '',

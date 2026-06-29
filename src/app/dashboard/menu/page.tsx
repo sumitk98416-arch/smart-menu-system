@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { Plus, Edit3, Trash2, Leaf, Flame, GripVertical, X, Triangle, Upload, ExternalLink } from 'lucide-react';
-import { demoCategories, demoMenuItems, saveDemoCategories, saveDemoMenuItems } from '@/lib/demo-data';
+import { demoCategories, demoMenuItems, saveDemoCategories, saveDemoMenuItems, demoRestaurant } from '@/lib/demo-data';
 import { MenuItem, MenuCategory } from '@/lib/types';
 import { formatCurrency, cn } from '@/lib/utils';
 
@@ -36,9 +36,15 @@ export default function MenuPage() {
         const saved = localStorage.getItem('qrestro_demo_restaurant');
         if (saved) {
           const custom = JSON.parse(saved);
-          if (custom.slug) setRestaurantSlug(custom.slug);
+          if (custom.slug) {
+            setRestaurantSlug(custom.slug);
+            return;
+          }
         }
       } catch {}
+      if (demoRestaurant?.slug) {
+        setRestaurantSlug(demoRestaurant.slug);
+      }
     }
   }, []);
 
