@@ -348,67 +348,90 @@ if (typeof window !== 'undefined') {
   }
 }
 
+let syncTimeout: any = null;
+let isSyncing = false;
+let pendingSync = false;
+
 export async function syncWithCloud() {
   if (typeof window === 'undefined') return;
-  try {
-    const savedRestaurant = localStorage.getItem('qrestro_demo_restaurant');
-    const savedCategories = localStorage.getItem('qrestro_demo_categories');
-    const savedItems = localStorage.getItem('qrestro_demo_items');
-    const savedTables = localStorage.getItem('qrestro_demo_tables');
 
-    const restaurant = savedRestaurant ? JSON.parse(savedRestaurant) : demoRestaurant;
-    const categories = savedCategories ? JSON.parse(savedCategories) : demoCategories;
-    const menuItems = savedItems ? JSON.parse(savedItems) : demoMenuItems;
-    const tables = savedTables ? JSON.parse(savedTables) : demoTables;
-
-    const syncedSettings = {
-      ...demoRestaurant.settings,
-      ...(restaurant.settings || {}),
-      cgst_rate: restaurant.cgst_rate !== undefined ? Number(restaurant.cgst_rate) : (restaurant.settings?.cgst_rate !== undefined ? Number(restaurant.settings.cgst_rate) : 2.5),
-      sgst_rate: restaurant.sgst_rate !== undefined ? Number(restaurant.sgst_rate) : (restaurant.settings?.sgst_rate !== undefined ? Number(restaurant.settings.sgst_rate) : 2.5),
-      service_charge_rate: restaurant.service_charge_rate !== undefined ? Number(restaurant.service_charge_rate) : (restaurant.settings?.service_charge_rate !== undefined ? Number(restaurant.settings.service_charge_rate) : 0),
-      service_charge_type: restaurant.service_charge_type || restaurant.settings?.service_charge_type || 'percent',
-      chef_email: restaurant.chef_email || restaurant.settings?.chef_email || 'supportqrestro@gmail.com',
-      chef_password: restaurant.chef_password || restaurant.settings?.chef_password || 'fsilnpkgqklmmdid',
-      chef_use_admin_creds: restaurant.chef_use_admin_creds === true || restaurant.settings?.chef_use_admin_creds === true,
-      upi_id: restaurant.upi_id || restaurant.settings?.upi_id || '',
-      payment_qr_url: restaurant.payment_qr_url || restaurant.settings?.payment_qr_url || '',
-    };
-
-    const restaurantPayload = {
-      name: restaurant.name || demoRestaurant.name || 'The Golden Plate',
-      description: restaurant.description || demoRestaurant.description || '',
-      logo_url: restaurant.logo_url || demoRestaurant.logo_url || '',
-      phone: restaurant.phone || demoRestaurant.phone || '',
-      address: restaurant.address || demoRestaurant.address || '',
-      currency: restaurant.currency || demoRestaurant.currency || '₹',
-      settings: syncedSettings,
-    };
-
-    const slug = restaurant.slug || demoRestaurant.slug || 'the-golden-plate';
-
-    const response = await fetch('/api/sync', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        slug,
-        restaurant: restaurantPayload,
-        categories,
-        menuItems,
-        tables,
-      }),
-    });
-
-    if (!response.ok) {
-      console.error('Cloud sync failed:', await response.text());
-    } else {
-      console.log('Cloud sync successful for slug:', slug);
-    }
-  } catch (error) {
-    console.error('Error during cloud sync:', error);
+  if (syncTimeout) {
+    clearTimeout(syncTimeout);
   }
+
+  syncTimeout = setTimeout(async () => {
+    if (isSyncing) {
+      pendingSync = true;
+      return;
+    }
+
+    isSyncing = true;
+    try {
+      const savedRestaurant = localStorage.getItem('qrestro_demo_restaurant');
+      const savedCategories = localStorage.getItem('qrestro_demo_categories');
+      const savedItems = localStorage.getItem('qrestro_demo_items');
+      const savedTables = localStorage.getItem('qrestro_demo_tables');
+
+      const restaurant = savedRestaurant ? JSON.parse(savedRestaurant) : demoRestaurant;
+      const categories = savedCategories ? JSON.parse(savedCategories) : demoCategories;
+      const menuItems = savedItems ? JSON.parse(savedItems) : demoMenuItems;
+      const tables = savedTables ? JSON.parse(savedTables) : demoTables;
+
+      const syncedSettings = {
+        ...demoRestaurant.settings,
+        ...(restaurant.settings || {}),
+        cgst_rate: restaurant.cgst_rate !== undefined ? Number(restaurant.cgst_rate) : (restaurant.settings?.cgst_rate !== undefined ? Number(restaurant.settings.cgst_rate) : 2.5),
+        sgst_rate: restaurant.sgst_rate !== undefined ? Number(restaurant.sgst_rate) : (restaurant.settings?.sgst_rate !== undefined ? Number(restaurant.settings.sgst_rate) : 2.5),
+        service_charge_rate: restaurant.service_charge_rate !== undefined ? Number(restaurant.service_charge_rate) : (restaurant.settings?.service_charge_rate !== undefined ? Number(restaurant.settings.service_charge_rate) : 0),
+        service_charge_type: restaurant.service_charge_type || restaurant.settings?.service_charge_type || 'percent',
+        chef_email: restaurant.chef_email || restaurant.settings?.chef_email || 'supportqrestro@gmail.com',
+        chef_password: restaurant.chef_password || restaurant.settings?.chef_password || 'fsilnpkgqklmmdid',
+        chef_use_admin_creds: restaurant.chef_use_admin_creds === true || restaurant.settings?.chef_use_admin_creds === true,
+        upi_id: restaurant.upi_id || restaurant.settings?.upi_id || '',
+        payment_qr_url: restaurant.payment_qr_url || restaurant.settings?.payment_qr_url || '',
+      };
+
+      const restaurantPayload = {
+        name: restaurant.name || demoRestaurant.name || 'The Golden Plate',
+        description: restaurant.description || demoRestaurant.description || '',
+        logo_url: restaurant.logo_url || demoRestaurant.logo_url || '',
+        phone: restaurant.phone || demoRestaurant.phone || '',
+        address: restaurant.address || demoRestaurant.address || '',
+        currency: restaurant.currency || demoRestaurant.currency || '₹',
+        settings: syncedSettings,
+      };
+
+      const slug = restaurant.slug || demoRestaurant.slug || 'the-golden-plate';
+
+      const response = await fetch('/api/sync', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          slug,
+          restaurant: restaurantPayload,
+          categories,
+          menuItems,
+          tables,
+        }),
+      });
+
+      if (!response.ok) {
+        console.error('Cloud sync failed:', await response.text());
+      } else {
+        console.log('Cloud sync successful for slug:', slug);
+      }
+    } catch (error) {
+      console.error('Error during cloud sync:', error);
+    } finally {
+      isSyncing = false;
+      if (pendingSync) {
+        pendingSync = false;
+        syncWithCloud();
+      }
+    }
+  }, 300);
 }
 
 export function saveDemoCategories(categories: MenuCategory[]) {
