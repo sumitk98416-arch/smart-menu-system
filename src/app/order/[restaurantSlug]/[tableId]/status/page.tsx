@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { Check, Clock, ChefHat, Bell, UtensilsCrossed, ArrowRight, RotateCcw, Star, Crown, Soup, CupSoda, QrCode, ArrowUpRight, CheckCircle, CreditCard, Lock } from 'lucide-react';
+import { Check, Clock, ChefHat, Bell, UtensilsCrossed, ArrowRight, RotateCcw, Star, Crown, Soup, CupSoda, QrCode, ArrowUpRight, CheckCircle, CreditCard, Lock, ArrowLeft } from 'lucide-react';
 import { formatCurrency, cn } from '@/lib/utils';
 import { useCart } from '@/hooks/useCart';
 import { QRCodeSVG } from 'qrcode.react';
@@ -391,7 +391,13 @@ export default function OrderStatusPage() {
     <div className="min-h-screen bg-cream-50">
       {/* Header */}
       <header className="bg-cream-50/90 backdrop-blur-md border-b border-cream-200">
-        <div className="max-w-lg mx-auto px-4 py-3 flex items-center justify-between">
+        <div className="max-w-lg mx-auto px-4 py-3 flex items-center gap-3">
+          <button
+            onClick={() => router.push(`/order/${params.restaurantSlug}/${params.tableId}`)}
+            className="p-1.5 rounded-lg text-ink-400 hover:text-ink-600 hover:bg-cream-100 transition-colors"
+          >
+            <ArrowLeft className="w-5 h-5" />
+          </button>
           <div className="flex items-center gap-2">
             <div className="w-11 h-11 bg-gold-500 rounded-xl flex items-center justify-center shadow-md overflow-hidden shrink-0">
               {renderLogo()}
