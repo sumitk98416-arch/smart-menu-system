@@ -287,16 +287,23 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
       const isDemo = document.cookie.includes('qrestro_demo=true');
 
-      if (isSupabaseConfigured && !isDemo) {
-        try {
-          const supabase = createClient();
-          const { data: { user } } = await supabase.auth.getUser();
-          if (user) {
-            setUserName(user.user_metadata?.name || user.email?.split('@')[0] || 'Owner');
-            setUserEmail(user.email || '');
+      if (!isDemo) {
+        if (isSupabaseConfigured) {
+          try {
+            const supabase = createClient();
+            const { data: { user } } = await supabase.auth.getUser();
+            if (user) {
+              setUserName(user.user_metadata?.name || user.email?.split('@')[0] || 'Owner');
+              setUserEmail(user.email || '');
+            } else {
+              window.location.href = '/auth/login';
+            }
+          } catch (e) {
+            console.error('Error fetching Supabase user in layout:', e);
+            window.location.href = '/auth/login';
           }
-        } catch (e) {
-          console.error('Error fetching Supabase user in layout:', e);
+        } else {
+          window.location.href = '/auth/login';
         }
       }
     };
