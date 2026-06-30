@@ -222,21 +222,17 @@ export default function SettingsPage() {
       setCheckoutError(null);
       setPaymentStep('initiating');
 
-      // Amount is ₹199 plan + ₹5 platform fee = ₹204 total
-      const totalAmount = 204;
-
-      // 1. Create order on the backend (api/payment/order)
-      const orderResponse = await fetch('/api/payment/order', {
+      // 1. Create subscription on the backend (api/payment/subscription)
+      const subResponse = await fetch('/api/payment/subscription', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ amount: totalAmount, orderNumber: 9999 }),
       });
 
-      if (!orderResponse.ok) {
-        throw new Error('Failed to initiate secure checkout session');
+      if (!subResponse.ok) {
+        throw new Error('Failed to initiate secure subscription session');
       }
 
-      const orderJson = await orderResponse.json();
+      const subJson = await subResponse.json();
 
       // 2. Load the external Razorpay Checkout SDK
       const isLoaded = await loadRazorpayScript();
@@ -247,14 +243,12 @@ export default function SettingsPage() {
         return;
       }
 
-      // 3. Open the Razorpay Overlay
+      // 3. Open the Razorpay Overlay (Subscription checkout requires subscription_id instead of order_id)
       const options = {
-        key: orderJson.keyId || process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || 'rzp_test_dummy',
-        amount: orderJson.amount,
-        currency: orderJson.currency,
+        key: subJson.keyId || process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || 'rzp_test_dummy',
+        subscription_id: subJson.subscriptionId,
         name: 'TableTap Premium Plan',
         description: 'Monthly Premium Plan + Platform Fee',
-        order_id: orderJson.orderId,
         handler: async function (response: any) {
           try {
             setPaymentStep('verifying');
@@ -263,7 +257,7 @@ export default function SettingsPage() {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({
-                razorpay_order_id: response.razorpay_order_id,
+                razorpay_subscription_id: response.razorpay_subscription_id,
                 razorpay_payment_id: response.razorpay_payment_id,
                 razorpay_signature: response.razorpay_signature,
               }),
@@ -295,12 +289,12 @@ export default function SettingsPage() {
                 setPaymentStep('idle');
               }, 2500);
             } else {
-              setCheckoutError(`Payment verification signature mismatch: ${verifyJson.error}`);
+              setCheckoutError(`Subscription verification signature mismatch: ${verifyJson.error}`);
               setPaymentStep('idle');
             }
           } catch (err: any) {
             console.error(err);
-            setCheckoutError(`Payment verification connection failed: ${err.message}`);
+            setCheckoutError(`Subscription verification connection failed: ${err.message}`);
             setPaymentStep('idle');
           } finally {
             setRazorpayLoading(false);
