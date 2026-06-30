@@ -251,7 +251,7 @@ export default function SignupPage() {
 
       // Automatically sign in with client-side Supabase client
       const supabase = createClient();
-      const { error: loginError } = await supabase.auth.signInWithPassword({
+      const { data: authData, error: loginError } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
@@ -272,6 +272,10 @@ export default function SignupPage() {
           keysToRemove.forEach(key => localStorage.removeItem(key));
         } catch (e) {
           console.error('Error resetting local storage on signup:', e);
+        }
+
+        if (authData?.user) {
+          localStorage.setItem('qrestro_active_user_id', authData.user.id);
         }
 
         // Clear all demo cookies for a clean real user session

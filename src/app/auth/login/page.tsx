@@ -243,7 +243,7 @@ export default function LoginPage() {
 
     try {
       const supabase = createClient();
-      const { error: authError } = await supabase.auth.signInWithPassword({ email, password });
+      const { data, error: authError } = await supabase.auth.signInWithPassword({ email, password });
       if (authError) {
         setError(authError.message);
       } else {
@@ -253,6 +253,10 @@ export default function LoginPage() {
         document.cookie = 'qrestro_demo_email=;path=/;max-age=0';
         document.cookie = 'qrestro_demo_phone=;path=/;max-age=0';
         document.cookie = 'qrestro_demo_password=;path=/;max-age=0';
+
+        if (data?.user) {
+          localStorage.setItem('qrestro_active_user_id', data.user.id);
+        }
 
         if (isKitchenUser) {
           window.location.href = '/kitchen-display';

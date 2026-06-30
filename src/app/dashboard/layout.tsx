@@ -295,6 +295,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             if (user) {
               setUserName(user.user_metadata?.name || user.email?.split('@')[0] || 'Owner');
               setUserEmail(user.email || '');
+              localStorage.setItem('qrestro_active_user_id', user.id);
             } else {
               window.location.replace('/auth/login');
             }
@@ -305,6 +306,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         } else {
           window.location.replace('/auth/login');
         }
+      } else {
+        localStorage.removeItem('qrestro_active_user_id');
       }
     };
     syncRealUser();
@@ -606,6 +609,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               document.cookie = 'qrestro_demo_email=;path=/;max-age=0';
               document.cookie = 'qrestro_demo_password=;path=/;max-age=0';
               try {
+                localStorage.removeItem('qrestro_active_user_id');
                 localStorage.removeItem('qrestro_demo_restaurant');
                 localStorage.removeItem('qrestro_demo_fresh_signup');
               } catch { }

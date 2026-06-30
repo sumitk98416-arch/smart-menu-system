@@ -152,6 +152,7 @@ export default function KitchenDisplayPage() {
     document.cookie = 'qrestro_demo_email=;path=/;max-age=0';
     document.cookie = 'qrestro_demo_password=;path=/;max-age=0';
     try {
+      localStorage.removeItem('qrestro_active_user_id');
       localStorage.removeItem('qrestro_demo_restaurant');
       localStorage.removeItem('qrestro_demo_fresh_signup');
     } catch { }

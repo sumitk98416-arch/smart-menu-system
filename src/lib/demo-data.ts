@@ -9,47 +9,67 @@ if (typeof window !== 'undefined') {
     const originalSet = window.localStorage.setItem;
     const originalRemove = window.localStorage.removeItem;
 
+    const getUserId = () => {
+      try {
+        return originalGet.call(window.localStorage, 'qrestro_active_user_id') || 'guest';
+      } catch {
+        return 'guest';
+      }
+    };
+
     window.localStorage.getItem = function (key: string) {
+      if (key === 'qrestro_active_user_id') {
+        return originalGet.call(window.localStorage, 'qrestro_active_user_id');
+      }
       if (key === 'qrestro_demo_fresh_signup' || key === 'qrestro_real_fresh_signup') {
         return 'true'; // Real users always start as a fresh blank setup
       }
+      const userId = getUserId();
       let targetKey = key;
       if (key.startsWith('qrestro_') && !key.startsWith('qrestro_real_')) {
         targetKey = key.startsWith('qrestro_demo_')
-          ? key.replace('qrestro_demo_', 'qrestro_real_')
-          : key.replace('qrestro_', 'qrestro_real_');
+          ? key.replace('qrestro_demo_', `qrestro_real_${userId}_`)
+          : key.replace('qrestro_', `qrestro_real_${userId}_`);
       } else if (key.startsWith('tabletap_') && !key.startsWith('tabletap_real_')) {
         targetKey = key.startsWith('tabletap_demo_')
-          ? key.replace('tabletap_demo_', 'tabletap_real_')
-          : key.replace('tabletap_', 'tabletap_real_');
+          ? key.replace('tabletap_demo_', `tabletap_real_${userId}_`)
+          : key.replace('tabletap_', `tabletap_real_${userId}_`);
       }
       return originalGet.call(window.localStorage, targetKey);
     };
 
     window.localStorage.setItem = function (key: string, value: string) {
+      if (key === 'qrestro_active_user_id') {
+        return originalSet.call(window.localStorage, 'qrestro_active_user_id', value);
+      }
+      const userId = getUserId();
       let targetKey = key;
       if (key.startsWith('qrestro_') && !key.startsWith('qrestro_real_')) {
         targetKey = key.startsWith('qrestro_demo_')
-          ? key.replace('qrestro_demo_', 'qrestro_real_')
-          : key.replace('qrestro_', 'qrestro_real_');
+          ? key.replace('qrestro_demo_', `qrestro_real_${userId}_`)
+          : key.replace('qrestro_', `qrestro_real_${userId}_`);
       } else if (key.startsWith('tabletap_') && !key.startsWith('tabletap_real_')) {
         targetKey = key.startsWith('tabletap_demo_')
-          ? key.replace('tabletap_demo_', 'tabletap_real_')
-          : key.replace('tabletap_', 'tabletap_real_');
+          ? key.replace('tabletap_demo_', `tabletap_real_${userId}_`)
+          : key.replace('tabletap_', `tabletap_real_${userId}_`);
       }
       return originalSet.call(window.localStorage, targetKey, value);
     };
 
     window.localStorage.removeItem = function (key: string) {
+      if (key === 'qrestro_active_user_id') {
+        return originalRemove.call(window.localStorage, 'qrestro_active_user_id');
+      }
+      const userId = getUserId();
       let targetKey = key;
       if (key.startsWith('qrestro_') && !key.startsWith('qrestro_real_')) {
         targetKey = key.startsWith('qrestro_demo_')
-          ? key.replace('qrestro_demo_', 'qrestro_real_')
-          : key.replace('qrestro_', 'qrestro_real_');
+          ? key.replace('qrestro_demo_', `qrestro_real_${userId}_`)
+          : key.replace('qrestro_', `qrestro_real_${userId}_`);
       } else if (key.startsWith('tabletap_') && !key.startsWith('tabletap_real_')) {
         targetKey = key.startsWith('tabletap_demo_')
-          ? key.replace('tabletap_demo_', 'tabletap_real_')
-          : key.replace('tabletap_', 'tabletap_real_');
+          ? key.replace('tabletap_demo_', `tabletap_real_${userId}_`)
+          : key.replace('tabletap_', `tabletap_real_${userId}_`);
       }
       return originalRemove.call(window.localStorage, targetKey);
     };
