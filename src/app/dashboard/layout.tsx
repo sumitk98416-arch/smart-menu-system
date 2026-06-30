@@ -9,6 +9,7 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { createClient } from '@/lib/supabase/client';
+import SetupGenie from '@/components/SetupGenie';
 
 const navItems = [
   { href: '/dashboard', label: 'Overview', icon: LayoutDashboard },
@@ -747,6 +748,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           )}
         </main>
       </div>
+      <SetupGenie />
     </div>
   );
 }
