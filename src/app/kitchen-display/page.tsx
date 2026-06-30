@@ -147,6 +147,7 @@ export default function KitchenDisplayPage() {
   };
 
   const handleSignOut = () => {
+    if (!window.confirm("Are you sure you want to sign out?")) return;
     document.cookie = 'qrestro_demo=;path=/;max-age=0';
     document.cookie = 'qrestro_demo_name=;path=/;max-age=0';
     document.cookie = 'qrestro_demo_email=;path=/;max-age=0';

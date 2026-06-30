@@ -598,6 +598,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
           <button
             onClick={async () => {
+              if (!window.confirm("Are you sure you want to sign out?")) return;
               try {
                 const supabase = createClient();
                 await supabase.auth.signOut();
