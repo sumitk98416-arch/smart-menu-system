@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import {
   UtensilsCrossed, LayoutDashboard, QrCode, ClipboardList,
-  ChefHat, Star, Settings, Menu, X, LogOut, Calendar, ChevronDown, User, Clock, Crown, CupSoda, Soup, Package, Users, BookOpen, Coins, Phone, ClipboardCheck, CreditCard, Sparkles
+  ChefHat, Star, Settings, Menu, X, LogOut, Calendar, ChevronDown, User, Clock, Crown, CupSoda, Soup, Package, Users, BookOpen, Coins, Phone, ClipboardCheck, CreditCard, Sparkles, AlertTriangle
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { createClient } from '@/lib/supabase/client';
@@ -709,7 +709,42 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
         {/* Page content */}
         <main className="flex-1 p-6 overflow-y-auto">
-          {children}
+          {subscription.plan === 'trial' && subscription.daysRemaining === 0 && pathname !== '/dashboard/settings' ? (
+            <div className="min-h-[70vh] flex items-center justify-center p-4">
+              <div className="bg-white border border-[#E6E1DA] rounded-3xl p-8 max-w-md text-center shadow-xl space-y-6 animate-scale-in">
+                <div className="w-16 h-16 bg-amber-500/10 text-amber-600 rounded-2xl flex items-center justify-center mx-auto border border-amber-500/20">
+                  <AlertTriangle className="w-8 h-8" />
+                </div>
+                <div>
+                  <h2 className="font-heading text-2xl font-bold text-ink-900">Your Free Trial Has Expired</h2>
+                  <p className="text-sm text-ink-500 mt-2.5 leading-relaxed">
+                    Your 7-day trial of TableTap Premium has ended. To continue managing your restaurant menu, QR tables, and staff, please subscribe to our Premium Plan.
+                  </p>
+                </div>
+                <div className="bg-cream-50 p-4 rounded-2xl border border-cream-100 flex justify-between items-center text-xs">
+                  <div className="text-left">
+                    <span className="font-bold text-ink-900 block">Premium Subscription</span>
+                    <span className="text-ink-450 mt-0.5 block">Access all premium features</span>
+                  </div>
+                  <span className="text-sm font-extrabold text-[#B88A52]">₹199 / mo</span>
+                </div>
+                <div className="flex flex-col gap-2">
+                  <Link
+                    href="/dashboard/settings?tab=subscription"
+                    className="flex items-center justify-center gap-2 w-full bg-[#B88A52] hover:bg-[#A37844] text-white text-sm font-bold py-3 px-4 rounded-xl transition-all shadow-sm cursor-pointer active:scale-98"
+                  >
+                    <Sparkles className="w-4.5 h-4.5" />
+                    <span>Subscribe to Continue</span>
+                  </Link>
+                  <p className="text-[10px] text-ink-400 mt-1">
+                    No hidden setup fees. Cancel anytime.
+                  </p>
+                </div>
+              </div>
+            </div>
+          ) : (
+            children
+          )}
         </main>
       </div>
     </div>
