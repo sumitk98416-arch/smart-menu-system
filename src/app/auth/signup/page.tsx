@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Mail, Lock, User, Eye, EyeOff, ArrowRight, Sparkles, Phone, ChevronDown } from 'lucide-react';
@@ -66,6 +66,20 @@ export default function SignupPage() {
   const [otpLoading, setOtpLoading] = useState(false);
   const [otpType, setOtpType] = useState<'email' | 'phone'>('email');
   const [devOtp, setDevOtp] = useState('');
+
+  useEffect(() => {
+    // Push dummy state to handle browser back button redirecting to hero page
+    window.history.pushState(null, '', window.location.href);
+
+    const handlePopState = () => {
+      window.location.replace('/');
+    };
+
+    window.addEventListener('popstate', handlePopState);
+    return () => {
+      window.removeEventListener('popstate', handlePopState);
+    };
+  }, []);
 
   const getPasswordStrength = (pass: string) => {
     if (!pass) return { score: 0, label: '', color: 'bg-transparent', textColor: 'text-white/40' };

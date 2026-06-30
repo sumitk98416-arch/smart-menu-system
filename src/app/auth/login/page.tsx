@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Mail, Lock, Eye, EyeOff, ArrowRight, Sparkles, ChefHat, KeyRound, ShieldCheck } from 'lucide-react';
@@ -58,6 +58,20 @@ export default function LoginPage() {
 
   // forgot-password multi-step state
   const [view, setView] = useState<'login' | 'forgot'>('login');
+
+  useEffect(() => {
+    // Push dummy state to handle browser back button redirecting to hero page
+    window.history.pushState(null, '', window.location.href);
+
+    const handlePopState = () => {
+      window.location.replace('/');
+    };
+
+    window.addEventListener('popstate', handlePopState);
+    return () => {
+      window.removeEventListener('popstate', handlePopState);
+    };
+  }, []);
   const [forgotStep, setForgotStep] = useState<'email' | 'otp' | 'newpass'>('email');
   const [forgotEmail, setForgotEmail] = useState('');
   const [otpValue, setOtpValue]       = useState('');
