@@ -55,7 +55,7 @@ export default function SetupGenie() {
 
   // Chat States
   const [messages, setMessages] = useState<Array<{ sender: 'user' | 'genie', text: string }>>([
-    { sender: 'genie', text: "Hi! I'm Genie 👋 I'll help you set up your restaurant in under 5 minutes. Feel free to ask me anything or click a question below!" }
+    { sender: 'genie', text: "Hi! I'm Foody 👋 I'll help you set up your restaurant in under 5 minutes. Feel free to ask me anything or click a question below!" }
   ]);
   const [inputVal, setInputVal] = useState('');
   const chatEndRef = useRef<HTMLDivElement>(null);
@@ -73,7 +73,6 @@ export default function SetupGenie() {
       // 2. Check QR Tables
       const savedTables = localStorage.getItem('qrestro_demo_tables');
       const tablesData = savedTables ? JSON.parse(savedTables) : [];
-      // If the user has customized/added tables (more than default or added new)
       const isTablesDone = tablesData.length > 0;
 
       // 3. Check Menu Items
@@ -214,17 +213,17 @@ export default function SetupGenie() {
             <div className="absolute top-0 right-0 w-24 h-24 bg-white/5 rounded-full blur-xl pointer-events-none" />
             
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full bg-white/20 backdrop-blur-md flex items-center justify-center border border-white/20 shadow-inner relative">
-                <Sparkles className="w-5 h-5 text-white animate-pulse" />
+              <div className="w-10 h-10 rounded-full bg-white border border-white/30 overflow-hidden relative shadow-inner flex items-center justify-center">
+                <img src="/foody_mascot.png" alt="Foody" className="w-full h-full object-cover scale-110" />
                 {activeTasksCount > 0 && (
-                  <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] font-extrabold w-4.5 h-4.5 rounded-full flex items-center justify-center border-2 border-[#B88A52] animate-bounce">
+                  <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] font-extrabold w-4.5 h-4.5 rounded-full flex items-center justify-center border-2 border-[#B88A52]">
                     {activeTasksCount}
                   </span>
                 )}
               </div>
               <div className="text-left">
-                <h3 className="font-heading font-bold text-base leading-tight">TableTap Genie</h3>
-                <span className="text-white/80 text-[11px] font-medium block mt-0.5">Under 5 Min Quick Setup Assistant</span>
+                <h3 className="font-heading font-bold text-base leading-tight">Foody</h3>
+                <span className="text-white/80 text-[11px] font-medium block mt-0.5">Your Helpful Food Setup Genie</span>
               </div>
             </div>
 
@@ -280,11 +279,11 @@ export default function SetupGenie() {
             <button 
               onClick={() => setActiveTab('chat')}
               className={cn(
-                "flex-1 py-3 text-xs font-bold text-ink-500 border-b-2 border-transparent transition-all cursor-pointer",
+                "flex-1 py-3 text-xs font-bold text-[#5A5348] border-b-2 border-transparent transition-all cursor-pointer",
                 activeTab === 'chat' && "border-[#B88A52] text-[#B88A52] bg-white"
               )}
             >
-              Ask Genie
+              Ask Foody
             </button>
           </div>
 
@@ -372,13 +371,25 @@ export default function SetupGenie() {
                     <div 
                       key={i} 
                       className={cn(
-                        "flex flex-col max-w-[85%] rounded-2xl p-3 text-xs leading-relaxed font-medium animate-scale-in text-left",
-                        msg.sender === 'user' 
-                          ? "ml-auto bg-[#B88A52] text-white rounded-tr-none" 
-                          : "bg-white border border-[#E6E1DA] text-ink-800 rounded-tl-none shadow-xs"
+                        "flex gap-2.5 items-start max-w-[85%]",
+                        msg.sender === 'user' ? "ml-auto flex-row-reverse" : "mr-auto"
                       )}
                     >
-                      {msg.text}
+                      {msg.sender === 'genie' && (
+                        <div className="w-7 h-7 rounded-full bg-white border border-[#E6E1DA] overflow-hidden flex-shrink-0 flex items-center justify-center">
+                          <img src="/foody_mascot.png" alt="Foody" className="w-full h-full object-cover scale-115" />
+                        </div>
+                      )}
+                      <div 
+                        className={cn(
+                          "rounded-2xl p-3 text-xs leading-relaxed font-medium text-left shadow-xs",
+                          msg.sender === 'user' 
+                            ? "bg-[#B88A52] text-white rounded-tr-none" 
+                            : "bg-white border border-[#E6E1DA] text-ink-800 rounded-tl-none"
+                        )}
+                      >
+                        {msg.text}
+                      </div>
                     </div>
                   ))}
                   <div ref={chatEndRef} />
@@ -404,7 +415,7 @@ export default function SetupGenie() {
                 <div className="flex gap-2 border-t border-[#E6E1DA] pt-3 bg-[#FAF8F5] flex-shrink-0">
                   <input
                     type="text"
-                    placeholder="Ask Genie a question..."
+                    placeholder="Ask Foody a question..."
                     value={inputVal}
                     onChange={e => setInputVal(e.target.value)}
                     onKeyDown={e => e.key === 'Enter' && handleSend()}
@@ -424,7 +435,7 @@ export default function SetupGenie() {
 
           {/* Footer branding */}
           <div className="bg-cream-50 border-t border-[#E6E1DA] py-2 px-4 flex items-center justify-between text-[10px] text-ink-400 font-bold flex-shrink-0">
-            <span>TABLETAP ONBOARDING WIDGET</span>
+            <span>FOODY ONBOARDING WIDGET</span>
             <span>V1.0</span>
           </div>
 
@@ -435,7 +446,7 @@ export default function SetupGenie() {
       <button
         onClick={() => setIsOpen(!isOpen)}
         className={cn(
-          "relative w-14 h-14 rounded-full bg-gradient-to-r from-[#B88A52] to-[#D4AF37] hover:from-[#A37844] hover:to-[#B88A52] shadow-xl hover:shadow-2xl flex items-center justify-center border-2 border-white cursor-pointer select-none transition-all duration-300 hover:scale-105 active:scale-95 group",
+          "relative w-14 h-14 rounded-full bg-gradient-to-r from-[#B88A52] to-[#D4AF37] hover:from-[#A37844] hover:to-[#B88A52] shadow-xl hover:shadow-2xl flex items-center justify-center border-2 border-white cursor-pointer select-none transition-all duration-300 hover:scale-105 active:scale-95 group overflow-hidden",
           isOpen && "rotate-90 bg-ink-900 border-cream-200"
         )}
       >
@@ -445,12 +456,10 @@ export default function SetupGenie() {
         {isOpen ? (
           <X className="w-6 h-6 text-white" />
         ) : (
-          <div className="relative flex items-center justify-center animate-float-slow">
-            <Sparkles className="w-6 h-6 text-white animate-pulse" />
-            
-            {/* Quick action notification badge */}
+          <div className="relative w-full h-full flex items-center justify-center animate-float-slow">
+            <img src="/foody_mascot.png" alt="Foody" className="w-full h-full object-cover scale-110" />
             {activeTasksCount > 0 && (
-              <span className="absolute -top-3.5 -right-3.5 bg-red-500 text-white text-[9px] font-extrabold w-5 h-5 rounded-full flex items-center justify-center border-2 border-white shadow-sm">
+              <span className="absolute top-0 right-0 bg-red-500 text-white text-[9px] font-extrabold w-4.5 h-4.5 rounded-full flex items-center justify-center border border-white shadow-sm z-10">
                 {activeTasksCount}
               </span>
             )}
