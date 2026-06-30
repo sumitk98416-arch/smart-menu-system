@@ -610,11 +610,13 @@ export default function HomePage() {
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitSuccess, setSubmitSuccess] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
 
   const handleSendMessage = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setIsSubmitting(true);
     setSubmitSuccess(false);
+    setSubmitError(null);
 
     const formData = new FormData(e.currentTarget);
     const data = {
@@ -653,10 +655,10 @@ export default function HomePage() {
         setSubmitSuccess(true);
         e.currentTarget.reset();
       } else {
-        alert("Something went wrong. Please try again or contact us directly at supportqrestro@gmail.com");
+        setSubmitError("Something went wrong. Please try again or contact us directly at supportqrestro@gmail.com");
       }
     } catch (error) {
-      alert("Something went wrong. Please try again or contact us directly at supportqrestro@gmail.com");
+      setSubmitError("Something went wrong. Please try again or contact us directly at supportqrestro@gmail.com");
     } finally {
       setIsSubmitting(false);
     }
@@ -1568,6 +1570,12 @@ export default function HomePage() {
                   {submitSuccess && (
                     <div className="bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 rounded-2xl p-4 text-xs font-semibold mb-4 text-center font-body animate-fade-in">
                       ✨ Message routed cleanly to the support crew! We will contact you soon.
+                    </div>
+                  )}
+
+                  {submitError && (
+                    <div className="bg-rose-500/10 border border-rose-500/20 text-rose-400 rounded-2xl p-4 text-xs font-semibold mb-4 text-center font-body animate-fade-in">
+                      ⚠️ {submitError}
                     </div>
                   )}
 
