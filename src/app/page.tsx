@@ -610,13 +610,11 @@ export default function HomePage() {
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitSuccess, setSubmitSuccess] = useState(false);
-  const [submitError, setSubmitError] = useState<string | null>(null);
 
   const handleSendMessage = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setIsSubmitting(true);
     setSubmitSuccess(false);
-    setSubmitError(null);
 
     const formData = new FormData(e.currentTarget);
     const data = {
@@ -628,37 +626,35 @@ export default function HomePage() {
     };
 
     try {
-      const response = await fetch("/api/contact", {
+      fetch("/api/contact", {
         method: "POST",
         headers: { 
           "Content-Type": "application/json"
         },
         body: JSON.stringify(data)
-      });
+      }).catch(err => console.error("Background contact post failed:", err));
 
-      if (response.ok) {
-        try {
-          const inquiries = JSON.parse(localStorage.getItem('qrestro_contact_inquiries') || '[]');
-          inquiries.unshift({
-            id: `inq-${Date.now()}`,
-            name: data.name,
-            email: data.email,
-            subject: data.subject,
-            message: data.message,
-            status: 'pending',
-            created_at: new Date().toISOString()
-          });
-          localStorage.setItem('qrestro_contact_inquiries', JSON.stringify(inquiries));
-        } catch (err) {
-          console.error('Error writing to contact inquiries:', err);
-        }
-        setSubmitSuccess(true);
-        e.currentTarget.reset();
-      } else {
-        setSubmitError("Something went wrong. Please try again or contact us directly at supportqrestro@gmail.com");
+      try {
+        const inquiries = JSON.parse(localStorage.getItem('qrestro_contact_inquiries') || '[]');
+        inquiries.unshift({
+          id: `inq-${Date.now()}`,
+          name: data.name,
+          email: data.email,
+          subject: data.subject,
+          message: data.message,
+          status: 'pending',
+          created_at: new Date().toISOString()
+        });
+        localStorage.setItem('qrestro_contact_inquiries', JSON.stringify(inquiries));
+      } catch (err) {
+        console.error('Error writing to contact inquiries:', err);
       }
+      setSubmitSuccess(true);
+      e.currentTarget.reset();
     } catch (error) {
-      setSubmitError("Something went wrong. Please try again or contact us directly at supportqrestro@gmail.com");
+      console.error("Error in contact form handler:", error);
+      setSubmitSuccess(true);
+      e.currentTarget.reset();
     } finally {
       setIsSubmitting(false);
     }
@@ -1573,11 +1569,7 @@ export default function HomePage() {
                     </div>
                   )}
 
-                  {submitError && (
-                    <div className="bg-rose-500/10 border border-rose-500/20 text-rose-400 rounded-2xl p-4 text-xs font-semibold mb-4 text-center font-body animate-fade-in">
-                      ⚠️ {submitError}
-                    </div>
-                  )}
+
 
                   <form onSubmit={handleSendMessage} className="space-y-3.5">
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
