@@ -261,6 +261,39 @@ export default function OrderStatusPage() {
     );
   };
 
+  const [tableNumber, setTableNumber] = useState('');
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const tableIdStr = params.tableId as string;
+      try {
+        const savedTables = localStorage.getItem('qrestro_demo_tables');
+        if (savedTables) {
+          const parsed = JSON.parse(savedTables);
+          if (Array.isArray(parsed)) {
+            const currentTable = parsed.find((t: any) => t.id === tableIdStr);
+            if (currentTable && currentTable.table_number) {
+              setTableNumber(currentTable.table_number);
+              return;
+            }
+          }
+        }
+      } catch (err) {
+        console.error('Error reading tables in status page:', err);
+      }
+
+      // Fallback
+      let fallbackNum = tableIdStr;
+      if (tableIdStr.includes('bulk-')) {
+        const parts = tableIdStr.split('-');
+        fallbackNum = parts[parts.length - 1] || tableIdStr;
+      } else {
+        fallbackNum = tableIdStr.replace('table-', '');
+      }
+      setTableNumber(fallbackNum);
+    }
+  }, [params.tableId]);
+
   const [orderData, setOrderData] = useState<OrderData | null>(() => {
     if (typeof window !== 'undefined') {
       const stored = sessionStorage.getItem('qrestro_last_order');
@@ -404,7 +437,7 @@ export default function OrderStatusPage() {
             </div>
             <div>
               <h1 className="font-heading text-lg font-bold text-ink-900">Order #{orderData.orderNumber}</h1>
-              <p className="text-xs text-ink-400">Table {(params.tableId as string)?.replace('table-', '')}</p>
+              <p className="text-xs text-ink-400">Table {tableNumber || (params.tableId as string)?.replace('table-', '')}</p>
             </div>
           </div>
         </div>
