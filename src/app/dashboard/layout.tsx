@@ -367,7 +367,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       }
 
       if (sub.plan === 'trial') {
-        const start = new Date(sub.trialStartDate);
+        const parts = sub.trialStartDate.split('-');
+        const start = new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]));
         start.setHours(0, 0, 0, 0);
         const now = new Date();
         now.setHours(0, 0, 0, 0);
