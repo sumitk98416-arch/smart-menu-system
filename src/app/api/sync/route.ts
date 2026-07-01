@@ -160,3 +160,133 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: error?.message || 'Sync failed' }, { status: 500 });
   }
 }
+
+export async function GET(request: NextRequest) {
+  try {
+    const { createClient: createServerClient } = await import('@/lib/supabase/server');
+    const supabase = await createServerClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    
+    if (!user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+    if (!supabaseUrl || !supabaseServiceKey) {
+      return NextResponse.json({ error: 'Supabase configuration missing' }, { status: 500 });
+    }
+
+    const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey, {
+      auth: {
+        autoRefreshToken: false,
+        persistSession: false,
+      },
+    });
+
+    // 1. Fetch the restaurant owned by the user
+    const { data: restaurant, error: restError } = await supabaseAdmin
+      .from('restaurants')
+      .select('*')
+      .eq('owner_id', user.id)
+      .maybeSingle();
+
+    if (restError) {
+      return NextResponse.json({ error: restError.message }, { status: 500 });
+    }
+
+    if (!restaurant) {
+      // Return empty configuration so client can initialize fresh
+      return NextResponse.json({
+        exists: false,
+        restaurant: null,
+        categories: [],
+        menuItems: [],
+        tables: []
+      });
+    }
+
+    // 2. Fetch categories
+    const { data: categories, error: catError } = await supabaseAdmin
+      .from('menu_categories')
+      .select('*')
+      .eq('restaurant_id', restaurant.id)
+      .order('sort_order');
+
+    if (catError) {
+      return NextResponse.json({ error: catError.message }, { status: 500 });
+    }
+
+    // 3. Fetch menu items
+    const { data: menuItems, error: itemsError } = await supabaseAdmin
+      .from('menu_items')
+      .select('*')
+      .eq('restaurant_id', restaurant.id)
+      .order('sort_order');
+
+    if (itemsError) {
+      return NextResponse.json({ error: itemsError.message }, { status: 500 });
+    }
+
+    // 4. Fetch tables
+    const { data: tables, error: tablesError } = await supabaseAdmin
+      .from('tables')
+      .select('*')
+      .eq('restaurant_id', restaurant.id)
+      .order('table_number');
+
+    if (tablesError) {
+      return NextResponse.json({ error: tablesError.message }, { status: 500 });
+    }
+
+    // Map IDs to match client-side local storage structure (which uses string UUIDs)
+    const formattedCategories = categories.map((cat: any) => ({
+      id: cat.id,
+      name: cat.name,
+      description: cat.description || '',
+      sort_order: cat.sort_order || 0,
+      is_active: cat.is_active !== false
+    }));
+
+    const formattedMenuItems = menuItems.map((item: any) => ({
+      id: item.id,
+      category_id: item.category_id,
+      name: item.name,
+      description: item.description || '',
+      price: parseFloat(item.price) || 0,
+      image_url: item.image_url || '',
+      is_available: item.is_available !== false,
+      is_vegetarian: item.is_vegetarian === true,
+      is_popular: item.is_popular === true,
+      sort_order: item.sort_order || 0
+    }));
+
+    const formattedTables = tables.map((t: any) => ({
+      id: `table-bulk-${t.table_number}`,
+      table_number: t.table_number,
+      capacity: parseInt(t.capacity) || 4,
+      is_active: t.is_active !== false
+    }));
+
+    return NextResponse.json({
+      exists: true,
+      restaurant: {
+        name: restaurant.name,
+        slug: restaurant.slug,
+        description: restaurant.description || '',
+        logo_url: restaurant.logo_url || '',
+        phone: restaurant.phone || '',
+        address: restaurant.address || '',
+        currency: restaurant.currency || '₹',
+        settings: restaurant.settings || {}
+      },
+      categories: formattedCategories,
+      menuItems: formattedMenuItems,
+      tables: formattedTables
+    });
+  } catch (error: any) {
+    console.error('Error fetching cloud sync data:', error);
+    return NextResponse.json({ error: error?.message || 'Server error' }, { status: 500 });
+  }
+}

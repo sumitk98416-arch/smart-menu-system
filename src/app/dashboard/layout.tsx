@@ -335,6 +335,35 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 console.error('Error during legacy data migration:', migErr);
               }
               
+              // Fetch and initialize local storage from cloud database!
+              try {
+                const syncRes = await fetch('/api/sync');
+                if (syncRes.ok) {
+                  const syncData = await syncRes.json();
+                  if (syncData.exists) {
+                    if (syncData.restaurant) {
+                      localStorage.setItem('qrestro_demo_restaurant', JSON.stringify(syncData.restaurant));
+                    }
+                    if (syncData.categories && syncData.categories.length > 0) {
+                      localStorage.setItem('qrestro_demo_categories', JSON.stringify(syncData.categories));
+                    }
+                    if (syncData.menuItems && syncData.menuItems.length > 0) {
+                      localStorage.setItem('qrestro_demo_items', JSON.stringify(syncData.menuItems));
+                    }
+                    if (syncData.tables && syncData.tables.length > 0) {
+                      localStorage.setItem('qrestro_demo_tables', JSON.stringify(syncData.tables));
+                    }
+                    
+                    // Trigger reload events so all tabs reactively pick up database values
+                    window.dispatchEvent(new CustomEvent('qrestro_name_changed', { detail: syncData.restaurant?.name }));
+                    window.dispatchEvent(new CustomEvent('qrestro_logo_changed', { detail: syncData.restaurant?.logo_url }));
+                    window.dispatchEvent(new Event('storage'));
+                  }
+                }
+              } catch (syncErr) {
+                console.error('Error pulling cloud sync data on layout load:', syncErr);
+              }
+              
               // Load the user's correct subscription using their created_at timestamp!
               loadSubscription(user.created_at);
               // Dispatch event to inform subpages to reload
