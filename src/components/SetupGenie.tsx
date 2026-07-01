@@ -442,24 +442,44 @@ export default function SetupGenie() {
         </div>
       )}
 
-      {/* ── FLOATING Mascotte TRIGGER BUTTON ── */}
+      {/* Speech bubble floating next to Foody */}
+      {!isOpen && (
+        <div className="absolute right-22 bottom-4 bg-white border border-[#E6E1DA] text-ink-950 text-xs font-bold px-4.5 py-3 rounded-2xl shadow-xl mr-2 animate-fade-in select-none flex items-center gap-2 max-w-xs leading-relaxed border-l-4 border-l-[#B88A52] whitespace-nowrap">
+          <span className="w-2 h-2 rounded-full bg-emerald-500 animate-ping flex-shrink-0" />
+          <div className="text-left font-medium">
+            <span className="font-extrabold text-[#B88A52] block">Foody is here! 👋</span>
+            <span className="text-[11px] text-ink-650 mt-0.5 block">Let's set up your restaurant in under 5 mins!</span>
+          </div>
+          {/* Arrow pointing to Foody */}
+          <div className="absolute top-1/2 -right-2.5 transform -translate-y-1/2 w-0 h-0 border-y-6 border-y-transparent border-l-6 border-l-white" />
+          <div className="absolute top-1/2 -right-3 transform -translate-y-1/2 w-0 h-0 border-y-[7px] border-y-transparent border-l-[7px] border-l-[#E6E1DA] -z-10" />
+        </div>
+      )}
+
+      {/* ── FLOATING MASCOT TRIGGER BUTTON ── */}
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className={cn(
-          "relative w-14 h-14 rounded-full bg-gradient-to-r from-[#B88A52] to-[#D4AF37] hover:from-[#A37844] hover:to-[#B88A52] shadow-xl hover:shadow-2xl flex items-center justify-center border-2 border-white cursor-pointer select-none transition-all duration-300 hover:scale-105 active:scale-95 group overflow-hidden",
-          isOpen && "rotate-90 bg-ink-900 border-cream-200"
-        )}
+        className="relative w-20 h-20 cursor-pointer select-none transition-all duration-300 hover:scale-110 active:scale-95 focus:outline-none z-50 flex items-center justify-center"
       >
-        {/* Glow element */}
-        <div className="absolute inset-0 rounded-full bg-[#D4AF37]/30 blur-md opacity-75 group-hover:opacity-100 animate-pulse pointer-events-none" />
-        
         {isOpen ? (
-          <X className="w-6 h-6 text-white" />
+          <div className="w-12 h-12 rounded-full bg-gradient-to-r from-[#B88A52] to-[#D4AF37] border-2 border-white flex items-center justify-center shadow-lg transition-transform duration-300 rotate-90">
+            <X className="w-5 h-5 text-white" />
+          </div>
         ) : (
-          <div className="relative w-full h-full flex items-center justify-center animate-float-slow">
-            <img src="/foody_mascot.png" alt="Foody" className="w-full h-full object-cover scale-110" />
+          <div className="relative w-20 h-20 flex items-center justify-center animate-float-character">
+            {/* Glowing ring/shadow behind Foody */}
+            <div className="absolute w-14 h-14 rounded-full bg-amber-500/20 blur-md -z-10 animate-pulse" />
+            
+            {/* Mascot Image */}
+            <img 
+              src="/foody_mascot.png" 
+              alt="Foody Mascot" 
+              className="w-18 h-18 object-contain drop-shadow-[0_8px_16px_rgba(184,138,82,0.3)] rounded-3xl"
+            />
+            
+            {/* Quick action notification badge */}
             {activeTasksCount > 0 && (
-              <span className="absolute top-0 right-0 bg-red-500 text-white text-[9px] font-extrabold w-4.5 h-4.5 rounded-full flex items-center justify-center border border-white shadow-sm z-10">
+              <span className="absolute top-1 right-1 bg-red-500 text-white text-[9px] font-extrabold w-5 h-5 rounded-full flex items-center justify-center border-2 border-white shadow-sm z-20">
                 {activeTasksCount}
               </span>
             )}
@@ -473,15 +493,15 @@ export default function SetupGenie() {
           0% { transform: translateY(0) scale(1); opacity: 1; }
           100% { transform: translateY(-100px) scale(0.5); opacity: 0; }
         }
-        @keyframes float-slow {
-          0%, 100% { transform: translateY(0px); }
-          50% { transform: translateY(-4px); }
+        @keyframes float-character {
+          0%, 100% { transform: translateY(0px) rotate(0deg); }
+          50% { transform: translateY(-8px) rotate(1deg); }
         }
         .animate-float-particle {
           animation: float-particle 2s ease-out infinite;
         }
-        .animate-float-slow {
-          animation: float-slow 3s ease-in-out infinite;
+        .animate-float-character {
+          animation: float-character 3s ease-in-out infinite;
         }
       `}</style>
     </div>
