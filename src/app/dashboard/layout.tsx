@@ -307,19 +307,29 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                     localStorage.setItem(`qrestro_real_${user.id}_subscription`, oldSub);
                     console.log('Migrated legacy premium subscription to user:', user.id);
                   }
+                  localStorage.removeItem('qrestro_real_subscription');
                 }
                 const oldTables = localStorage.getItem('qrestro_real_tables');
-                if (oldTables && !localStorage.getItem(`qrestro_real_${user.id}_tables`)) {
-                  localStorage.setItem(`qrestro_real_${user.id}_tables`, oldTables);
-                  console.log('Migrated legacy tables to user:', user.id);
+                if (oldTables) {
+                  if (!localStorage.getItem(`qrestro_real_${user.id}_tables`)) {
+                    localStorage.setItem(`qrestro_real_${user.id}_tables`, oldTables);
+                    console.log('Migrated legacy tables to user:', user.id);
+                  }
+                  localStorage.removeItem('qrestro_real_tables');
                 }
                 const oldCategories = localStorage.getItem('qrestro_real_categories');
-                if (oldCategories && !localStorage.getItem(`qrestro_real_${user.id}_categories`)) {
-                  localStorage.setItem(`qrestro_real_${user.id}_categories`, oldCategories);
+                if (oldCategories) {
+                  if (!localStorage.getItem(`qrestro_real_${user.id}_categories`)) {
+                    localStorage.setItem(`qrestro_real_${user.id}_categories`, oldCategories);
+                  }
+                  localStorage.removeItem('qrestro_real_categories');
                 }
                 const oldItems = localStorage.getItem('qrestro_real_items');
-                if (oldItems && !localStorage.getItem(`qrestro_real_${user.id}_items`)) {
-                  localStorage.setItem(`qrestro_real_${user.id}_items`, oldItems);
+                if (oldItems) {
+                  if (!localStorage.getItem(`qrestro_real_${user.id}_items`)) {
+                    localStorage.setItem(`qrestro_real_${user.id}_items`, oldItems);
+                  }
+                  localStorage.removeItem('qrestro_real_items');
                 }
               } catch (migErr) {
                 console.error('Error during legacy data migration:', migErr);
