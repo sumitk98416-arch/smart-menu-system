@@ -298,6 +298,33 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               setUserEmail(user.email || '');
               localStorage.setItem('qrestro_active_user_id', user.id);
               
+              // Migrate legacy un-prefixed data to the new user-scoped keys
+              try {
+                const oldSub = localStorage.getItem('qrestro_real_subscription');
+                if (oldSub) {
+                  const parsed = JSON.parse(oldSub);
+                  if (parsed && parsed.plan === 'premium') {
+                    localStorage.setItem(`qrestro_real_${user.id}_subscription`, oldSub);
+                    console.log('Migrated legacy premium subscription to user:', user.id);
+                  }
+                }
+                const oldTables = localStorage.getItem('qrestro_real_tables');
+                if (oldTables && !localStorage.getItem(`qrestro_real_${user.id}_tables`)) {
+                  localStorage.setItem(`qrestro_real_${user.id}_tables`, oldTables);
+                  console.log('Migrated legacy tables to user:', user.id);
+                }
+                const oldCategories = localStorage.getItem('qrestro_real_categories');
+                if (oldCategories && !localStorage.getItem(`qrestro_real_${user.id}_categories`)) {
+                  localStorage.setItem(`qrestro_real_${user.id}_categories`, oldCategories);
+                }
+                const oldItems = localStorage.getItem('qrestro_real_items');
+                if (oldItems && !localStorage.getItem(`qrestro_real_${user.id}_items`)) {
+                  localStorage.setItem(`qrestro_real_${user.id}_items`, oldItems);
+                }
+              } catch (migErr) {
+                console.error('Error during legacy data migration:', migErr);
+              }
+              
               // Load the user's correct subscription using their created_at timestamp!
               loadSubscription(user.created_at);
               // Dispatch event to inform subpages to reload
