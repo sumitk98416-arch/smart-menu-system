@@ -297,6 +297,11 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               setUserName(user.user_metadata?.name || user.email?.split('@')[0] || 'Owner');
               setUserEmail(user.email || '');
               localStorage.setItem('qrestro_active_user_id', user.id);
+              
+              // Load the user's correct subscription using their created_at timestamp!
+              loadSubscription(user.created_at);
+              // Dispatch event to inform subpages to reload
+              window.dispatchEvent(new CustomEvent('qrestro_subscription_changed'));
             } else {
               window.location.replace('/auth/login');
             }
@@ -309,6 +314,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         }
       } else {
         localStorage.removeItem('qrestro_active_user_id');
+        loadSubscription(); // Demo mode uses local presets
       }
     };
     syncRealUser();
@@ -342,7 +348,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     document.addEventListener('mousedown', handleClickOutside);
 
     // Load subscription status
-    const loadSubscription = () => {
+    const loadSubscription = (accountCreatedAt?: string) => {
       const stored = localStorage.getItem('qrestro_demo_subscription');
       let sub: any = null;
       if (stored) {
@@ -361,15 +367,25 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       };
 
       const todayStr = getLocalDateString();
+      let defaultTrialStart = todayStr;
+      if (accountCreatedAt) {
+        try {
+          defaultTrialStart = getLocalDateString(new Date(accountCreatedAt));
+        } catch (e) {
+          console.error('Error parsing account creation date:', e);
+        }
+      }
+
       if (!sub || !sub.trialStartDate) {
         sub = {
           plan: 'trial',
-          trialStartDate: todayStr,
+          trialStartDate: defaultTrialStart,
           subscribedDate: null,
         };
         localStorage.setItem('qrestro_demo_subscription', JSON.stringify(sub));
       }
 
+      // If they are on a trial, count days since trialStartDate (which is the account creation date)
       if (sub.plan === 'trial') {
         const parts = sub.trialStartDate.split('-');
         const start = new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]));
@@ -381,6 +397,35 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         sub.daysRemaining = Math.max(0, 7 - diffDays);
       } else {
         sub.daysRemaining = 0;
+      }
+
+      // Check premium plan duration (1 month/30 days check)
+      if (sub.plan === 'premium' && sub.subscribedDate) {
+        try {
+          const parts = sub.subscribedDate.split('-');
+          const start = new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]));
+          start.setHours(0, 0, 0, 0);
+          
+          const expiry = new Date(start);
+          expiry.setDate(expiry.getDate() + 30); // 30 days premium plan limit
+          
+          const now = new Date();
+          now.setHours(0, 0, 0, 0);
+          
+          const diffTime = expiry.getTime() - now.getTime();
+          const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+          
+          if (diffDays <= 0) {
+            // Premium subscription expired after 30 days! Reset to trial with 0 days
+            sub.plan = 'trial';
+            sub.daysRemaining = 0;
+            localStorage.setItem('qrestro_demo_subscription', JSON.stringify(sub));
+          } else {
+            sub.premiumDaysRemaining = diffDays;
+          }
+        } catch (e) {
+          console.error('Error parsing premium subscription date:', e);
+        }
       }
 
       setSubscription(sub);

@@ -188,6 +188,35 @@ export default function SettingsPage() {
         sub.daysRemaining = 0;
       }
 
+      // Check premium plan duration (1 month/30 days check)
+      if (sub.plan === 'premium' && sub.subscribedDate) {
+        try {
+          const parts = sub.subscribedDate.split('-');
+          const start = new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]));
+          start.setHours(0, 0, 0, 0);
+          
+          const expiry = new Date(start);
+          expiry.setDate(expiry.getDate() + 30); // 30 days premium plan limit
+          
+          const now = new Date();
+          now.setHours(0, 0, 0, 0);
+          
+          const diffTime = expiry.getTime() - now.getTime();
+          const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+          
+          if (diffDays <= 0) {
+            // Premium subscription expired after 30 days! Reset to trial with 0 days
+            sub.plan = 'trial';
+            sub.daysRemaining = 0;
+            localStorage.setItem('qrestro_demo_subscription', JSON.stringify(sub));
+          } else {
+            sub.premiumDaysRemaining = diffDays;
+          }
+        } catch (e) {
+          console.error('Error parsing premium subscription date:', e);
+        }
+      }
+
       setSubscription(sub);
     };
 
